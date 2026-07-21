@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Ruta {{ ruta.nombre }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="h3 mb-1">{{ ruta.nombre }}</h1>
+    <p class="text-muted mb-0">Fecha {{ ruta.fecha }} · Recolector ID {{ ruta.id_usuario }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('rutas.editar', ruta_id=ruta.id) }}" class="btn btn-outline-primary">Editar</a>
+    <a href="{{ url_for('rutas.listar') }}" class="btn btn-outline-secondary">Volver</a>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-header bg-white">
+    <strong>Contenedores en la ruta</strong>
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Contenedor</th>
+          <th>Código QR</th>
+          <th>Nivel actual</th>
+          <th>Estado en ruta</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for detalle in ruta.detalles %}
+        {% set c = detalle.contenedor %}
+        {% set nivel = c.nivel_actual|float %}
+        <tr>
+          <td>{{ c.nombre }}</td>
+          <td><code>{{ c.codigo_contenedor }}</code></td>
+          <td>
+            <div class="d-flex align-items-center gap-2" style="min-width: 160px;">
+              <div class="progress flex-grow-1 nivel-bar">
+                <div class="progress-bar {% if nivel >= 80 %}bg-danger{% elif nivel >= 50 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ nivel }}%"></div>
+              </div>
+              <span class="small">{{ nivel }}%</span>
+            </div>
+          </td>
+          <td><span class="badge text-bg-light border">{{ detalle.estado.estado|capitalize }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted py-4">Esta ruta no tiene contenedores.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

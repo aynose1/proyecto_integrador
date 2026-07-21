@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Reportes — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="h3 mb-1">Reportes</h1>
+    <p class="text-muted mb-0">Exportación a PDF y Excel disponible; contenido por definir.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('reportes.exportar_excel') }}" class="btn btn-success"><i class="bi bi-file-earmark-spreadsheet"></i> Exportar Excel</a>
+    <a href="{{ url_for('reportes.exportar_pdf') }}" class="btn btn-danger"><i class="bi bi-file-earmark-pdf"></i> Exportar PDF</a>
+  </div>
+</div>
+
+<div class="empty-state card border-0 shadow-sm mt-4">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-file-text display-4 text-muted"></i>
+    <h2 class="h5 mt-3">Módulo en construcción</h2>
+    <p class="text-muted mb-0">Cuando definas qué reportes necesitas (incidencias, recolecciones, niveles, etc.), los agregamos aquí.</p>
+    <p class="text-muted small mt-2 mb-0">Los botones de exportación generan un archivo placeholder de ejemplo.</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{% if usuario %}Editar{% else %}Nuevo{% endif %} usuario — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="h3 mb-1">{% if usuario %}Editar usuario{% else %}Nuevo usuario{% endif %}</h1>
+    <p class="text-muted mb-0">{% if usuario %}Actualiza los datos del usuario.{% else %}Registra un administrador o recolector.{% endif %}</p>
+  </div>
+  <a href="{{ url_for('usuarios.listar') }}" class="btn btn-outline-secondary">Volver</a>
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      {% if not usuario %}
+      <div class="col-md-4">
+        <label class="form-label" for="codigo_usuario">Código de usuario</label>
+        <input type="text" class="form-control" id="codigo_usuario" name="codigo_usuario" required maxlength="20">
+      </div>
+      {% endif %}
+
+      <div class="col-md-4">
+        <label class="form-label" for="nombre">Nombre</label>
+        <input type="text" class="form-control" id="nombre" name="nombre" required maxlength="100" value="{{ usuario.nombre if usuario else '' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="apellido_paterno">Apellido paterno</label>
+        <input type="text" class="form-control" id="apellido_paterno" name="apellido_paterno" required maxlength="100" value="{{ usuario.apellido_paterno if usuario else '' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="apellido_materno">Apellido materno</label>
+        <input type="text" class="form-control" id="apellido_materno" name="apellido_materno" maxlength="100" value="{{ usuario.apellido_materno if usuario and usuario.apellido_materno else '' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="id_tipo_usuario">Tipo de usuario</label>
+        <select class="form-select" id="id_tipo_usuario" name="id_tipo_usuario" required>
+          {% for tipo in tipos_usuario %}
+          <option value="{{ tipo.id }}" {% if usuario and usuario.tipo_usuario.id == tipo.id %}selected{% endif %}>{{ tipo.tipo|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="contrasena">Contraseña{% if usuario %} <span class="text-muted">(opcional)</span>{% endif %}</label>
+        <input type="password" class="form-control" id="contrasena" name="contrasena" {% if not usuario %}required minlength="8"{% else %}minlength="8"{% endif %}>
+      </div>
+
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

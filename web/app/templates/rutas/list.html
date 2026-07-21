@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Rutas — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="h3 mb-1">Rutas de recolección</h1>
+    <p class="text-muted mb-0">Cada ruta puede incluir varios contenedores.</p>
+  </div>
+  <a href="{{ url_for('rutas.crear') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nueva ruta</a>
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Nombre</th>
+          <th>Recolector</th>
+          <th>Fecha</th>
+          <th>Horario</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rutas %}
+        {% set recolector = usuarios.get(r.id_usuario) %}
+        <tr>
+          <td>{{ r.nombre }}</td>
+          <td>
+            {% if recolector %}
+              {{ recolector.nombre }} {{ recolector.apellido_paterno }}
+              <div class="small text-muted"><code>{{ recolector.codigo_usuario }}</code></div>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>{{ r.fecha }}</td>
+          <td>
+            {% if r.hora_inicio %}{{ r.hora_inicio[:5] }}{% else %}—{% endif %}
+            –
+            {% if r.hora_fin %}{{ r.hora_fin[:5] }}{% else %}—{% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('rutas.detalle', ruta_id=r.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
+            <a href="{{ url_for('rutas.editar', ruta_id=r.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+            <form method="post" action="{{ url_for('rutas.eliminar', ruta_id=r.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar esta ruta?')">
+              <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-4">No hay rutas registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
