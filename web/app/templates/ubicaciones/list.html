@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Zonas y Sectores — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="h3 mb-1">Configuración de Ubicaciones</h1>
+    <p class="text-muted mb-0">Gestiona las zonas y sectores donde se ubican los contenedores.</p>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-header bg-white border-bottom">
+    <nav class="nav nav-tabs nav-fill" role="tablist" style="margin: -1px -1px 0 -1px;">
+      <button class="nav-link {% if tab == 'zonas' %}active{% endif %}" id="tab-zonas-btn" data-bs-toggle="tab" data-bs-target="#tab-zonas" type="button" role="tab">Zonas</button>
+      <button class="nav-link {% if tab == 'sectores' %}active{% endif %}" id="tab-sectores-btn" data-bs-toggle="tab" data-bs-target="#tab-sectores" type="button" role="tab">Sectores</button>
+    </nav>
+  </div>
+
+  <div class="tab-content">
+    {# ========== ZONAS ========== #}
+    <div class="tab-pane fade {% if tab == 'zonas' %}show active{% endif %}" id="tab-zonas" role="tabpanel">
+      <div class="p-4">
+        <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalZonaNueva">
+          <i class="bi bi-plus-lg"></i> Nueva zona
+        </button>
+
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Nombre</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for z in zonas %}
+              <tr>
+                <td>{{ z.nombre }}</td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalZonaEditar{{ z.id }}">Editar</button>
+                  <form method="post" action="{{ url_for('ubicaciones.eliminar_zona', zona_id=z.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar esta zona?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                  </form>
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="2" class="text-center text-muted py-4">No hay zonas registradas.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {# ========== SECTORES ========== #}
+    <div class="tab-pane fade {% if tab == 'sectores' %}show active{% endif %}" id="tab-sectores" role="tabpanel">
+      <div class="p-4">
+        <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalSectorNuevo">
+          <i class="bi bi-plus-lg"></i> Nuevo sector
+        </button>
+
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Nombre</th>
+                <th>Zona</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in sectores %}
+              <tr>
+                <td>{{ s.nombre }}</td>
+                <td>{{ s.zona.nombre }}</td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalSectorEditar{{ s.id }}">Editar</button>
+                  <form method="post" action="{{ url_for('ubicaciones.eliminar_sector', sector_id=s.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este sector?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                  </form>
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="3" class="text-center text-muted py-4">No hay sectores registrados.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ========== MODALES ZONAS ========== #}
+<div class="modal fade" id="modalZonaNueva" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="{{ url_for('ubicaciones.crear_zona') }}" class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Nueva zona</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-0">
+          <label class="form-label" for="z_nombre">Nombre</label>
+          <input type="text" class="form-control" id="z_nombre" name="nombre" required maxlength="100" placeholder="Ej. Edificio A">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% for z in zonas %}
+<div class="modal fade" id="modalZonaEditar{{ z.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="{{ url_for('ubicaciones.editar_zona', zona_id=z.id) }}" class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Editar zona</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-0">
+          <label class="form-label" for="ze_nombre_{{ z.id }}">Nombre</label>
+          <input type="text" class="form-control" id="ze_nombre_{{ z.id }}" name="nombre" required maxlength="100" value="{{ z.nombre }}">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+{# ========== MODALES SECTORES ========== #}
+<div class="modal fade" id="modalSectorNuevo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="{{ url_for('ubicaciones.crear_sector') }}" class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Nuevo sector</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label" for="s_zona">Zona</label>
+          <select class="form-select" id="s_zona" name="id_zona" required>
+            <option value="">Selecciona…</option>
+            {% for z in zonas %}
+            <option value="{{ z.id }}">{{ z.nombre }}</option>
+            {% endfor %}
+          </select>
+          {% if not zonas %}
+          <div class="form-text text-warning">Primero crea una zona.</div>
+          {% endif %}
+        </div>
+        <div class="mb-0">
+          <label class="form-label" for="s_nombre">Nombre</label>
+          <input type="text" class="form-control" id="s_nombre" name="nombre" required maxlength="100" placeholder="Ej. Planta baja">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% for s in sectores %}
+<div class="modal fade" id="modalSectorEditar{{ s.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="{{ url_for('ubicaciones.editar_sector', sector_id=s.id) }}" class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Editar sector</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label" for="se_zona_{{ s.id }}">Zona</label>
+          <select class="form-select" id="se_zona_{{ s.id }}" name="id_zona" required>
+            {% for z in zonas %}
+            <option value="{{ z.id }}" {% if s.id_zona == z.id %}selected{% endif %}>{{ z.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-0">
+          <label class="form-label" for="se_nombre_{{ s.id }}">Nombre</label>
+          <input type="text" class="form-control" id="se_nombre_{{ s.id }}" name="nombre" required maxlength="100" value="{{ s.nombre }}">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

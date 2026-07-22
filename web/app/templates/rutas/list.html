@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+{% block title %}Rutas — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="h3 mb-1">Rutas de recolección</h1>
+    <p class="text-muted mb-0">Cada ruta puede incluir varios contenedores en orden.</p>
+  </div>
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRutaNueva">
+    <i class="bi bi-plus-lg"></i> Nueva ruta
+  </button>
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Nombre</th>
+          <th>Recolector</th>
+          <th>Fecha</th>
+          <th>Horario</th>
+          <th>Contenedores</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rutas %}
+        {% set recolector = usuarios.get(r.id_usuario) %}
+        <tr>
+          <td>{{ r.nombre }}</td>
+          <td>
+            {% if recolector %}
+              {{ recolector.nombre }} {{ recolector.apellido_paterno }}
+              <div class="small text-muted"><code>{{ recolector.codigo_usuario }}</code></div>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>{{ r.fecha }}</td>
+          <td>
+            {% if r.hora_inicio %}{{ r.hora_inicio[:5] }}{% else %}—{% endif %}
+            –
+            {% if r.hora_fin %}{{ r.hora_fin[:5] }}{% else %}—{% endif %}
+          </td>
+          <td>{{ r.detalles|length }}</td>
+          <td class="text-end">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalRutaVer{{ r.id }}">Ver</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalRutaEditar{{ r.id }}">Editar</button>
+            <form method="post" action="{{ url_for('rutas.eliminar', ruta_id=r.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar esta ruta?')">
+              <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No hay rutas registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Modal crear #}
+<div class="modal fade" id="modalRutaNueva" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form method="post" action="{{ url_for('rutas.crear') }}" class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Nueva ruta</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="r_nombre">Nombre</label>
+            <input type="text" class="form-control" id="r_nombre" name="nombre" required maxlength="100">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="r_usuario">Recolector</label>
+            <select class="form-select" id="r_usuario" name="id_usuario" required>
+              <option value="">Selecciona…</option>
+              {% for recolector in recolectores %}
+              <option value="{{ recolector.id }}">{{ recolector.nombre }} {{ recolector.apellido_paterno }} ({{ recolector.codigo_usuario }})</option>
+              {% endfor %}
+            </select>
+            {% if not recolectores %}
+            <div class="form-text text-warning">Crea un recolector en Usuarios primero.</div>
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="r_fecha">Fecha</label>
+            <input type="date" class="form-control" id="r_fecha" name="fecha" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="r_hi">Hora inicio</label>
+            <input type="time" class="form-control" id="r_hi" name="hora_inicio">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="r_hf">Hora fin</label>
+            <input type="time" class="form-control" id="r_hf" name="hora_fin">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Contenedores en la ruta (en orden)</label>
+            <div id="contenedores-lista-nueva" class="border rounded p-3 bg-light" style="min-height: 150px;">
+              <p class="text-muted mb-0">Selecciona contenedores de abajo para agregarlos en orden.</p>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Contenedores disponibles</label>
+            <div class="contenedor-checklist border rounded p-3">
+              {% for c in contenedores %}
+              <div class="form-check">
+                <input class="form-check-input cb-nueva" type="checkbox" value="{{ c.id }}" id="r_cont_{{ c.id }}" data-nombre="{{ c.nombre }}" data-codigo="{{ c.codigo_contenedor }}">
+                <label class="form-check-label" for="r_cont_{{ c.id }}">
+                  {{ c.nombre }} <span class="text-muted">({{ c.codigo_contenedor }}) — {{ c.nivel_actual }}%</span>
+                </label>
+              </div>
+              {% else %}
+              <p class="text-muted mb-0">No hay contenedores disponibles.</p>
+              {% endfor %}
+            </div>
+          </div>
+          <input type="hidden" name="ids_contenedores" id="ids_contenedores_final_nueva" value="">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% for r in rutas %}
+{% set selected_ids = r.selected_ids %}
+
+{# Modal ver #}
+<div class="modal fade" id="modalRutaVer{{ r.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">{{ r.nombre }}</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">Fecha {{ r.fecha }} · Recolector ID {{ r.id_usuario }}</p>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Orden</th>
+                <th>Contenedor</th>
+                <th>Código QR</th>
+                <th>Nivel</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for detalle in r.detalles|sort(attribute='orden') %}
+              {% set c = detalle.contenedor %}
+              {% set nivel = c.nivel_actual|float %}
+              <tr>
+                <td><span class="badge bg-primary">{{ detalle.orden }}</span></td>
+                <td>{{ c.nombre }}</td>
+                <td><code>{{ c.codigo_contenedor }}</code></td>
+                <td>{{ nivel }}%</td>
+                <td><span class="badge text-bg-light border">{{ detalle.estado.estado|capitalize }}</span></td>
+              </tr>
+              {% else %}
+              <tr><td colspan="5" class="text-muted text-center">Sin contenedores</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Modal editar #}
+<div class="modal fade" id="modalRutaEditar{{ r.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form method="post" action="{{ url_for('rutas.editar', ruta_id=r.id) }}" class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Editar ruta</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="re_nombre_{{ r.id }}">Nombre</label>
+            <input type="text" class="form-control" id="re_nombre_{{ r.id }}" name="nombre" required maxlength="100" value="{{ r.nombre }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="re_usuario_{{ r.id }}">Recolector</label>
+            <select class="form-select" id="re_usuario_{{ r.id }}" name="id_usuario" required>
+              {% for recolector in recolectores %}
+              <option value="{{ recolector.id }}" {% if r.id_usuario == recolector.id %}selected{% endif %}>
+                {{ recolector.nombre }} {{ recolector.apellido_paterno }} ({{ recolector.codigo_usuario }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="re_fecha_{{ r.id }}">Fecha</label>
+            <input type="date" class="form-control" id="re_fecha_{{ r.id }}" name="fecha" required value="{{ r.fecha }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="re_hi_{{ r.id }}">Hora inicio</label>
+            <input type="time" class="form-control" id="re_hi_{{ r.id }}" name="hora_inicio" value="{{ r.hora_inicio[:5] if r.hora_inicio else '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="re_hf_{{ r.id }}">Hora fin</label>
+            <input type="time" class="form-control" id="re_hf_{{ r.id }}" name="hora_fin" value="{{ r.hora_fin[:5] if r.hora_fin else '' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Contenedores en la ruta (en orden)</label>
+            <div id="contenedores-lista-edit-{{ r.id }}" class="border rounded p-3 bg-light" style="min-height: 150px;">
+              {% if r.detalles %}
+                {% for detalle in r.detalles|sort(attribute='orden') %}
+                <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-white rounded item-contenedor" data-id="{{ detalle.contenedor.id }}">
+                  <span class="badge bg-primary orden-badge">{{ detalle.orden }}</span>
+                  <div class="flex-grow-1">
+                    <div><strong>{{ detalle.contenedor.nombre }}</strong></div>
+                    <div class="small text-muted">{{ detalle.contenedor.codigo_contenedor }}</div>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.item-contenedor').remove(); actualizarListaEdit('{{ r.id }}');">✕ Quitar</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverArriba(this, '{{ r.id }}');">↑</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverAbajo(this, '{{ r.id }}');">↓</button>
+                </div>
+                {% endfor %}
+              {% else %}
+              <p class="text-muted mb-0">Selecciona contenedores de abajo para agregarlos en orden.</p>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Contenedores disponibles</label>
+            <div class="contenedor-checklist border rounded p-3">
+              {% for c in contenedores %}
+              <div class="form-check">
+                <input class="form-check-input cb-edit-{{ r.id }}" type="checkbox" value="{{ c.id }}" id="re_cont_{{ r.id }}_{{ c.id }}" data-nombre="{{ c.nombre }}" data-codigo="{{ c.codigo_contenedor }}" {% if c.id in selected_ids %}checked{% endif %}>
+                <label class="form-check-label" for="re_cont_{{ r.id }}_{{ c.id }}">
+                  {{ c.nombre }} <span class="text-muted">({{ c.codigo_contenedor }})</span>
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <input type="hidden" name="ids_contenedores" id="ids_contenedores_final_{{ r.id }}" value="">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+// NUEVA RUTA
+function setupNuevaRuta() {
+  const cbsNueva = document.querySelectorAll('.cb-nueva');
+  const listaRuta = document.getElementById('contenedores-lista-nueva');
+  const inputFinal = document.getElementById('ids_contenedores_final_nueva');
+
+  // Actualizar solo números de orden y campo hidden (sin reconstruir)
+  function actualizarOrdenYCampo() {
+    const items = listaRuta.querySelectorAll('.item-contenedor');
+    items.forEach((item, idx) => {
+      const badge = item.querySelector('.orden-badge');
+      if (badge) badge.textContent = idx + 1;
+    });
+    const idsOrden = Array.from(items).map(el => el.dataset.id);
+    inputFinal.value = idsOrden.join(',');
+  }
+
+  // Reconstruir lista desde checkboxes (cuando se marca/desmarca)
+  function actualizarLista() {
+    const seleccionados = Array.from(cbsNueva)
+      .filter(cb => cb.checked)
+      .map(cb => ({ id: cb.value, nombre: cb.dataset.nombre, codigo: cb.dataset.codigo }));
+
+    if (seleccionados.length === 0) {
+      listaRuta.innerHTML = '<p class="text-muted mb-0">Selecciona contenedores de abajo para agregarlos en orden.</p>';
+    } else {
+      listaRuta.innerHTML = seleccionados.map((c, idx) => `
+        <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-white rounded item-contenedor" data-id="${c.id}">
+          <span class="badge bg-primary orden-badge">${idx + 1}</span>
+          <div class="flex-grow-1">
+            <div><strong>${c.nombre}</strong></div>
+            <div class="small text-muted">${c.codigo}</div>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.item-contenedor').remove(); actualizarListaNueva();">✕ Quitar</button>
+          ${idx > 0 ? `<button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverArribaNueva(this);">↑</button>` : ''}
+          ${idx < seleccionados.length - 1 ? `<button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverAbajoNueva(this);">↓</button>` : ''}
+        </div>
+      `).join('');
+    }
+    actualizarOrdenYCampo();
+  }
+
+  window.actualizarListaNueva = actualizarLista;
+  
+  // Movimiento: solo reordena en DOM, no reconstruye
+  window.moverArribaNueva = function(btn) {
+    const item = btn.closest('.item-contenedor');
+    const prev = item.previousElementSibling;
+    if (prev && prev.classList.contains('item-contenedor')) {
+      item.parentNode.insertBefore(item, prev);
+      actualizarOrdenYCampo();
+    }
+  };
+  window.moverAbajoNueva = function(btn) {
+    const item = btn.closest('.item-contenedor');
+    const next = item.nextElementSibling;
+    if (next && next.classList.contains('item-contenedor')) {
+      item.parentNode.insertBefore(next, item);
+      actualizarOrdenYCampo();
+    }
+  };
+
+  cbsNueva.forEach(cb => cb.addEventListener('change', actualizarLista));
+}
+
+// EDITAR RUTAS
+window.actualizarListaEdit = function(rutaId) {
+  const cbsEdit = document.querySelectorAll(`.cb-edit-${rutaId}`);
+  const listaEdit = document.getElementById(`contenedores-lista-edit-${rutaId}`);
+  const inputFinal = document.getElementById(`ids_contenedores_final_${rutaId}`);
+  
+  const seleccionados = Array.from(cbsEdit)
+    .filter(cb => cb.checked)
+    .map(cb => ({ id: cb.value, nombre: cb.dataset.nombre, codigo: cb.dataset.codigo }));
+
+  if (seleccionados.length === 0) {
+    listaEdit.innerHTML = '<p class="text-muted mb-0">Selecciona contenedores de abajo para agregarlos en orden.</p>';
+  } else {
+    listaEdit.innerHTML = seleccionados.map((c, idx) => `
+      <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-white rounded item-contenedor" data-id="${c.id}">
+        <span class="badge bg-primary orden-badge">${idx + 1}</span>
+        <div class="flex-grow-1">
+          <div><strong>${c.nombre}</strong></div>
+          <div class="small text-muted">${c.codigo}</div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.item-contenedor').remove(); actualizarListaEdit('${rutaId}');">✕ Quitar</button>
+        ${idx > 0 ? `<button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverArriba(this, '${rutaId}');">↑</button>` : ''}
+        ${idx < seleccionados.length - 1 ? `<button type="button" class="btn btn-sm btn-outline-secondary" onclick="moverAbajo(this, '${rutaId}');">↓</button>` : ''}
+      </div>
+    `).join('');
+  }
+
+  const idsOrden = Array.from(listaEdit.querySelectorAll('.item-contenedor')).map(el => el.dataset.id);
+  inputFinal.value = idsOrden.join(',');
+  
+  // Actualizar números de orden
+  listaEdit.querySelectorAll('.orden-badge').forEach((badge, idx) => {
+    badge.textContent = idx + 1;
+  });
+};
+
+// Movimiento en edición: solo reordena en DOM, no reconstruye
+window.moverArriba = function(btn, rutaId) {
+  const item = btn.closest('.item-contenedor');
+  const prev = item.previousElementSibling;
+  if (prev && prev.classList.contains('item-contenedor')) {
+    item.parentNode.insertBefore(item, prev);
+    // Solo actualizar números y campo hidden
+    const listaEdit = item.closest('.border.rounded');
+    const inputFinal = document.getElementById(`ids_contenedores_final_${rutaId}`);
+    listaEdit.querySelectorAll('.orden-badge').forEach((badge, idx) => {
+      badge.textContent = idx + 1;
+    });
+    const idsOrden = Array.from(listaEdit.querySelectorAll('.item-contenedor')).map(el => el.dataset.id);
+    inputFinal.value = idsOrden.join(',');
+  }
+};
+
+window.moverAbajo = function(btn, rutaId) {
+  const item = btn.closest('.item-contenedor');
+  const next = item.nextElementSibling;
+  if (next && next.classList.contains('item-contenedor')) {
+    item.parentNode.insertBefore(next, item);
+    // Solo actualizar números y campo hidden
+    const listaEdit = item.closest('.border.rounded');
+    const inputFinal = document.getElementById(`ids_contenedores_final_${rutaId}`);
+    listaEdit.querySelectorAll('.orden-badge').forEach((badge, idx) => {
+      badge.textContent = idx + 1;
+    });
+    const idsOrden = Array.from(listaEdit.querySelectorAll('.item-contenedor')).map(el => el.dataset.id);
+    inputFinal.value = idsOrden.join(',');
+  }
+};
+
+// Inicializar al cargar
+document.addEventListener('DOMContentLoaded', setupNuevaRuta);
+
+// Reconfigurar cuando se abre modal de editar
+document.querySelectorAll('[id^="modalRutaEditar"]').forEach(modal => {
+  modal.addEventListener('shown.bs.modal', function() {
+    const match = this.id.match(/\d+$/);
+    if (match) {
+      const rutaId = match[0];
+      const cbsEdit = document.querySelectorAll(`.cb-edit-${rutaId}`);
+      cbsEdit.forEach(cb => {
+        cb.addEventListener('change', () => actualizarListaEdit(rutaId));
+      });
+    }
+  });
+});
+</script>
+
+{% endblock %}
