@@ -6,12 +6,6 @@ from app.decorators import admin_required
 bp = Blueprint("contenedores", __name__, url_prefix="/contenedores")
 
 
-def _load_form_data():
-    ubicaciones = api_request("get", "/ubicaciones")
-    estados = api_request("get", "/catalogos/estados")
-    return {"ubicaciones": ubicaciones, "estados": estados}
-
-
 def _ubicacion_label(ubicacion: dict) -> str:
     sector = ubicacion.get("sector", {})
     zona = sector.get("zona", {})
@@ -23,71 +17,55 @@ def _ubicacion_label(ubicacion: dict) -> str:
 def listar():
     try:
         contenedores = api_request("get", "/contenedores")
+        ubicaciones = api_request("get", "/ubicaciones")
+        estados = api_request("get", "/catalogos/estados")
     except APIError as exc:
         flash(exc.message, "danger")
         contenedores = []
-    return render_template("contenedores/list.html", contenedores=contenedores)
+        ubicaciones = []
+        estados = []
+    return render_template(
+        "contenedores/list.html",
+        contenedores=contenedores,
+        ubicaciones=ubicaciones,
+        estados=estados,
+        ubicacion_label=_ubicacion_label,
+    )
 
 
-@bp.route("/nuevo", methods=["GET", "POST"])
+@bp.route("/nuevo", methods=["POST"])
 @admin_required
 def crear():
-    form_data = _load_form_data()
-
-    if request.method == "POST":
-        payload = {
-            "nombre": request.form["nombre"].strip(),
-            "codigo_contenedor": request.form["codigo_contenedor"].strip(),
-            "capacidad_max": float(request.form["capacidad_max"]),
-            "id_ubicacion": int(request.form["id_ubicacion"]),
-            "id_estado": int(request.form["id_estado"]),
-        }
-        try:
-            api_request("post", "/contenedores", data=payload)
-            flash("Contenedor registrado.", "success")
-            return redirect(url_for("contenedores.listar"))
-        except APIError as exc:
-            flash(exc.message, "danger")
-
-    return render_template(
-        "contenedores/form.html",
-        contenedor=None,
-        ubicacion_label=_ubicacion_label,
-        **form_data,
-    )
-
-
-@bp.route("/<int:contenedor_id>/editar", methods=["GET", "POST"])
-@admin_required
-def editar(contenedor_id: int):
-    form_data = _load_form_data()
-
+    payload = {
+        "nombre": request.form["nombre"].strip(),
+        "codigo_contenedor": request.form["codigo_contenedor"].strip(),
+        "capacidad_max": float(request.form["capacidad_max"]),
+        "id_ubicacion": int(request.form["id_ubicacion"]),
+        "id_estado": int(request.form["id_estado"]),
+    }
     try:
-        contenedor = api_request("get", f"/contenedores/{contenedor_id}")
+        api_request("post", "/contenedores", data=payload)
+        flash("Contenedor registrado.", "success")
     except APIError as exc:
         flash(exc.message, "danger")
-        return redirect(url_for("contenedores.listar"))
+    return redirect(url_for("contenedores.listar"))
 
-    if request.method == "POST":
-        payload = {
-            "nombre": request.form["nombre"].strip(),
-            "capacidad_max": float(request.form["capacidad_max"]),
-            "id_ubicacion": int(request.form["id_ubicacion"]),
-            "id_estado": int(request.form["id_estado"]),
-        }
-        try:
-            api_request("put", f"/contenedores/{contenedor_id}", data=payload)
-            flash("Contenedor actualizado.", "success")
-            return redirect(url_for("contenedores.listar"))
-        except APIError as exc:
-            flash(exc.message, "danger")
 
-    return render_template(
-        "contenedores/form.html",
-        contenedor=contenedor,
-        ubicacion_label=_ubicacion_label,
-        **form_data,
-    )
+@bp.route("/<int:contenedor_id>/editar", methods=["POST"])
+@admin_required
+def editar(contenedor_id: int):
+    payload = {
+        "nombre": request.form["nombre"].strip(),
+        "capacidad_max": float(request.form["capacidad_max"]),
+        "id_ubicacion": int(request.form["id_ubicacion"]),
+        "id_estado": int(request.form["id_estado"]),
+    }
+    try:
+        api_request("put", f"/contenedores/{contenedor_id}", data=payload)
+        flash("Contenedor actualizado.", "success")
+    except APIError as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("contenedores.listar"))
 
 
 @bp.route("/<int:contenedor_id>/eliminar", methods=["POST"])

@@ -107,6 +107,16 @@ body {
   background: #fafbfc;
 }
 
+.nav-tabs .nav-link {
+  color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--brand-green);
+  font-weight: 600;
+  border-bottom-color: var(--brand-green);
+}
+
 .empty-state .card-body {
   max-width: 560px;
   margin: 0 auto;

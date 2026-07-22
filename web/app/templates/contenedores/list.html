@@ -7,7 +7,9 @@
     <h1 class="h3 mb-1">Contenedores</h1>
     <p class="text-muted mb-0">Nivel actual actualizado por el sistema embebido vía sensor.</p>
   </div>
-  <a href="{{ url_for('contenedores.crear') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nuevo contenedor</a>
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalContenedorNuevo">
+    <i class="bi bi-plus-lg"></i> Nuevo contenedor
+  </button>
 </div>
 
 <div class="card border-0 shadow-sm mt-4">
@@ -34,7 +36,7 @@
           <td>{{ c.capacidad_max }} L</td>
           <td style="min-width: 180px;">
             <div class="d-flex align-items-center gap-2">
-              <div class="progress flex-grow-1 nivel-bar" role="progressbar" aria-valuenow="{{ nivel }}" aria-valuemin="0" aria-valuemax="100">
+              <div class="progress flex-grow-1 nivel-bar" role="progressbar">
                 <div class="progress-bar {% if nivel >= 80 %}bg-danger{% elif nivel >= 50 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ nivel }}%"></div>
               </div>
               <span class="small fw-semibold">{{ nivel }}%</span>
@@ -42,7 +44,7 @@
           </td>
           <td><span class="badge text-bg-light border">{{ c.estado.estado|capitalize }}</span></td>
           <td class="text-end">
-            <a href="{{ url_for('contenedores.editar', contenedor_id=c.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalContenedorEditar{{ c.id }}">Editar</button>
             <form method="post" action="{{ url_for('contenedores.eliminar', contenedor_id=c.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este contenedor?')">
               <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
             </form>
@@ -55,4 +57,106 @@
     </table>
   </div>
 </div>
+
+{# Modal crear #}
+<div class="modal fade" id="modalContenedorNuevo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="{{ url_for('contenedores.crear') }}" class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Nuevo contenedor</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label" for="c_nombre">Nombre</label>
+          <input type="text" class="form-control" id="c_nombre" name="nombre" required maxlength="100">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="c_codigo">Código contenedor (QR)</label>
+          <input type="text" class="form-control" id="c_codigo" name="codigo_contenedor" required maxlength="50">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="c_cap">Capacidad máxima (L)</label>
+          <input type="number" step="0.01" min="0.01" class="form-control" id="c_cap" name="capacidad_max" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="c_ubic">Ubicación</label>
+          <select class="form-select" id="c_ubic" name="id_ubicacion" required>
+            <option value="">Selecciona…</option>
+            {% for u in ubicaciones %}
+            <option value="{{ u.id }}">{{ ubicacion_label(u) }}</option>
+            {% endfor %}
+          </select>
+          {% if not ubicaciones %}
+          <div class="form-text text-warning">Primero crea una ubicación en el módulo Ubicaciones.</div>
+          {% endif %}
+        </div>
+        <div class="mb-0">
+          <label class="form-label" for="c_estado">Estado</label>
+          <select class="form-select" id="c_estado" name="id_estado" required>
+            {% for e in estados %}
+            <option value="{{ e.id }}">{{ e.estado|capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% for c in contenedores %}
+<div class="modal fade" id="modalContenedorEditar{{ c.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="{{ url_for('contenedores.editar', contenedor_id=c.id) }}" class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Editar contenedor</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Código QR</label>
+          <input type="text" class="form-control" value="{{ c.codigo_contenedor }}" disabled>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nivel actual</label>
+          <input type="text" class="form-control" value="{{ c.nivel_actual }}%" disabled>
+          <div class="form-text">Actualizado automáticamente por el sensor embebido.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="ce_nombre_{{ c.id }}">Nombre</label>
+          <input type="text" class="form-control" id="ce_nombre_{{ c.id }}" name="nombre" required maxlength="100" value="{{ c.nombre }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="ce_cap_{{ c.id }}">Capacidad máxima (L)</label>
+          <input type="number" step="0.01" min="0.01" class="form-control" id="ce_cap_{{ c.id }}" name="capacidad_max" required value="{{ c.capacidad_max }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="ce_ubic_{{ c.id }}">Ubicación</label>
+          <select class="form-select" id="ce_ubic_{{ c.id }}" name="id_ubicacion" required>
+            {% for u in ubicaciones %}
+            <option value="{{ u.id }}" {% if c.id_ubicacion == u.id %}selected{% endif %}>{{ ubicacion_label(u) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-0">
+          <label class="form-label" for="ce_estado_{{ c.id }}">Estado</label>
+          <select class="form-select" id="ce_estado_{{ c.id }}" name="id_estado" required>
+            {% for e in estados %}
+            <option value="{{ e.id }}" {% if c.id_estado == e.id %}selected{% endif %}>{{ e.estado|capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
 {% endblock %}

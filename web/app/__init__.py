@@ -25,6 +25,6 @@ def create_app(config_class=Config) -> Flask:
 
     @app.context_processor
     def inject_globals():
-        return {"app_name": "Gestión de Residuos"}
+        return {"app_name": "Echo-Bin"}
 
     return app

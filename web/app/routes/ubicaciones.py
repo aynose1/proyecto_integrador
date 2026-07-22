@@ -6,80 +6,52 @@ from app.decorators import admin_required
 bp = Blueprint("ubicaciones", __name__, url_prefix="/ubicaciones")
 
 
-def _load_form_data():
-    sectores = api_request("get", "/sectores")
-    zonas = api_request("get", "/zonas")
-    return {"sectores": sectores, "zonas": zonas}
-
-
-def _sector_label(sector: dict) -> str:
-    zona = sector.get("zona", {})
-    return f"{zona.get('nombre', '?')} / {sector.get('nombre', '?')}"
-
-
 @bp.route("")
 @admin_required
 def listar():
+    tab = request.args.get("tab", "ubicaciones")
+    if tab not in {"ubicaciones", "zonas", "sectores"}:
+        tab = "ubicaciones"
     try:
         ubicaciones = api_request("get", "/ubicaciones")
+        sectores = api_request("get", "/sectores")
+        zonas = api_request("get", "/zonas")
     except APIError as exc:
         flash(exc.message, "danger")
         ubicaciones = []
-    return render_template("ubicaciones/list.html", ubicaciones=ubicaciones)
+        sectores = []
+        zonas = []
+    return render_template(
+        "ubicaciones/list.html",
+        ubicaciones=ubicaciones,
+        sectores=sectores,
+        zonas=zonas,
+        tab=tab,
+    )
 
 
-@bp.route("/nuevo", methods=["GET", "POST"])
+@bp.route("/nuevo", methods=["POST"])
 @admin_required
 def crear():
-    form_data = _load_form_data()
-
-    if request.method == "POST":
-        payload = {"id_sector": int(request.form["id_sector"])}
-        try:
-            api_request("post", "/ubicaciones", data=payload)
-            flash("Ubicación creada.", "success")
-            return redirect(url_for("ubicaciones.listar"))
-        except APIError as exc:
-            flash(exc.message, "danger")
-
-    return render_template(
-        "ubicaciones/form.html",
-        ubicacion=None,
-        sector_label=_sector_label,
-        **form_data,
-    )
-
-
-@bp.route("/<int:ubicacion_id>/editar", methods=["GET", "POST"])
-@admin_required
-def editar(ubicacion_id: int):
-    form_data = _load_form_data()
-
+    payload = {"id_sector": int(request.form["id_sector"])}
     try:
-        ubicaciones = api_request("get", "/ubicaciones")
-        ubicacion = next((u for u in ubicaciones if u["id"] == ubicacion_id), None)
-        if not ubicacion:
-            flash("Ubicación no encontrada.", "danger")
-            return redirect(url_for("ubicaciones.listar"))
+        api_request("post", "/ubicaciones", data=payload)
+        flash("Ubicación creada.", "success")
     except APIError as exc:
         flash(exc.message, "danger")
-        return redirect(url_for("ubicaciones.listar"))
+    return redirect(url_for("ubicaciones.listar"))
 
-    if request.method == "POST":
-        payload = {"id_sector": int(request.form["id_sector"])}
-        try:
-            api_request("put", f"/ubicaciones/{ubicacion_id}", data=payload)
-            flash("Ubicación actualizada.", "success")
-            return redirect(url_for("ubicaciones.listar"))
-        except APIError as exc:
-            flash(exc.message, "danger")
 
-    return render_template(
-        "ubicaciones/form.html",
-        ubicacion=ubicacion,
-        sector_label=_sector_label,
-        **form_data,
-    )
+@bp.route("/<int:ubicacion_id>/editar", methods=["POST"])
+@admin_required
+def editar(ubicacion_id: int):
+    payload = {"id_sector": int(request.form["id_sector"])}
+    try:
+        api_request("put", f"/ubicaciones/{ubicacion_id}", data=payload)
+        flash("Ubicación actualizada.", "success")
+    except APIError as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("ubicaciones.listar"))
 
 
 @bp.route("/<int:ubicacion_id>/eliminar", methods=["POST"])
@@ -91,3 +63,79 @@ def eliminar(ubicacion_id: int):
     except APIError as exc:
         flash(exc.message, "danger")
     return redirect(url_for("ubicaciones.listar"))
+
+
+@bp.route("/zonas/nuevo", methods=["POST"])
+@admin_required
+def crear_zona():
+    payload = {"nombre": request.form["nombre"].strip()}
+    try:
+        api_request("post", "/zonas", data=payload)
+        flash("Zona creada.", "success")
+    except APIError as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("ubicaciones.listar", tab="zonas"))
+
+
+@bp.route("/zonas/<int:zona_id>/editar", methods=["POST"])
+@admin_required
+def editar_zona(zona_id: int):
+    payload = {"nombre": request.form["nombre"].strip()}
+    try:
+        api_request("put", f"/zonas/{zona_id}", data=payload)
+        flash("Zona actualizada.", "success")
+    except APIError as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("ubicaciones.listar", tab="zonas"))
+
+
+@bp.route("/zonas/<int:zona_id>/eliminar", methods=["POST"])
+@admin_required
+def eliminar_zona(zona_id: int):
+    try:
+        api_request("delete", f"/zonas/{zona_id}")
+        flash("Zona eliminada.", "success")
+    except APIError as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("ubicaciones.listar", tab="zonas"))
+
+
+@bp.route("/sectores/nuevo", methods=["POST"])
+@admin_required
+def crear_sector():
+    payload = {
+        "nombre": request.form["nombre"].strip(),
+        "id_zona": int(request.form["id_zona"]),
+    }
+    try:
+        api_request("post", "/sectores", data=payload)
+        flash("Sector creado.", "success")
+    except APIError as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("ubicaciones.listar", tab="sectores"))
+
+
+@bp.route("/sectores/<int:sector_id>/editar", methods=["POST"])
+@admin_required
+def editar_sector(sector_id: int):
+    payload = {
+        "nombre": request.form["nombre"].strip(),
+        "id_zona": int(request.form["id_zona"]),
+    }
+    try:
+        api_request("put", f"/sectores/{sector_id}", data=payload)
+        flash("Sector actualizado.", "success")
+    except APIError as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("ubicaciones.listar", tab="sectores"))
+
+
+@bp.route("/sectores/<int:sector_id>/eliminar", methods=["POST"])
+@admin_required
+def eliminar_sector(sector_id: int):
+    try:
+        api_request("delete", f"/sectores/{sector_id}")
+        flash("Sector eliminado.", "success")
+    except APIError as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("ubicaciones.listar", tab="sectores"))

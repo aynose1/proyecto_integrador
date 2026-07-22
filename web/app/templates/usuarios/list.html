@@ -7,7 +7,9 @@
     <h1 class="h3 mb-1">Usuarios</h1>
     <p class="text-muted mb-0">Administradores y recolectores.</p>
   </div>
-  <a href="{{ url_for('usuarios.crear') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nuevo usuario</a>
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalUsuarioNuevo">
+    <i class="bi bi-plus-lg"></i> Nuevo usuario
+  </button>
 </div>
 
 <div class="card border-0 shadow-sm mt-4">
@@ -28,7 +30,7 @@
           <td>{{ u.nombre }} {{ u.apellido_paterno }}{% if u.apellido_materno %} {{ u.apellido_materno }}{% endif %}</td>
           <td><span class="badge text-bg-secondary">{{ u.tipo_usuario.tipo|capitalize }}</span></td>
           <td class="text-end">
-            <a href="{{ url_for('usuarios.editar', usuario_id=u.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalUsuarioEditar{{ u.id }}">Editar</button>
             <form method="post" action="{{ url_for('usuarios.eliminar', usuario_id=u.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este usuario?')">
               <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
             </form>
@@ -41,4 +43,98 @@
     </table>
   </div>
 </div>
+
+{# Modal crear #}
+<div class="modal fade" id="modalUsuarioNuevo" tabindex="-1" aria-labelledby="modalUsuarioNuevoLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="{{ url_for('usuarios.crear') }}" class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="modalUsuarioNuevoLabel">Nuevo usuario</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label" for="nuevo_codigo">Código de usuario</label>
+          <input type="text" class="form-control" id="nuevo_codigo" name="codigo_usuario" required maxlength="20">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="nuevo_nombre">Nombre</label>
+          <input type="text" class="form-control" id="nuevo_nombre" name="nombre" required maxlength="100">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="nuevo_ap">Apellido paterno</label>
+          <input type="text" class="form-control" id="nuevo_ap" name="apellido_paterno" required maxlength="100">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="nuevo_am">Apellido materno</label>
+          <input type="text" class="form-control" id="nuevo_am" name="apellido_materno" maxlength="100">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="nuevo_tipo">Tipo de usuario</label>
+          <select class="form-select" id="nuevo_tipo" name="id_tipo_usuario" required>
+            {% for tipo in tipos_usuario %}
+            <option value="{{ tipo.id }}">{{ tipo.tipo|capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-0">
+          <label class="form-label" for="nuevo_pass">Contraseña</label>
+          <input type="password" class="form-control" id="nuevo_pass" name="contrasena" required minlength="8">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# Modales editar #}
+{% for u in usuarios %}
+<div class="modal fade" id="modalUsuarioEditar{{ u.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="{{ url_for('usuarios.editar', usuario_id=u.id) }}" class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Editar usuario — {{ u.codigo_usuario }}</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Código de usuario</label>
+          <input type="text" class="form-control" value="{{ u.codigo_usuario }}" disabled>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="edit_nombre_{{ u.id }}">Nombre</label>
+          <input type="text" class="form-control" id="edit_nombre_{{ u.id }}" name="nombre" required maxlength="100" value="{{ u.nombre }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="edit_ap_{{ u.id }}">Apellido paterno</label>
+          <input type="text" class="form-control" id="edit_ap_{{ u.id }}" name="apellido_paterno" required maxlength="100" value="{{ u.apellido_paterno }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="edit_am_{{ u.id }}">Apellido materno</label>
+          <input type="text" class="form-control" id="edit_am_{{ u.id }}" name="apellido_materno" maxlength="100" value="{{ u.apellido_materno or '' }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="edit_tipo_{{ u.id }}">Tipo de usuario</label>
+          <select class="form-select" id="edit_tipo_{{ u.id }}" name="id_tipo_usuario" required>
+            {% for tipo in tipos_usuario %}
+            <option value="{{ tipo.id }}" {% if u.tipo_usuario.id == tipo.id %}selected{% endif %}>{{ tipo.tipo|capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-0">
+          <label class="form-label" for="edit_pass_{{ u.id }}">Contraseña <span class="text-muted">(opcional)</span></label>
+          <input type="password" class="form-control" id="edit_pass_{{ u.id }}" name="contrasena" minlength="8">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
 {% endblock %}
