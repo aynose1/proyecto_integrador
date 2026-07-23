@@ -19,6 +19,7 @@
         <tr>
           <th>Nombre</th>
           <th>Código QR</th>
+          <th>QR</th>
           <th>Sector (Zona/Sector)</th>
           <th>Capacidad</th>
           <th>Nivel actual</th>
@@ -32,6 +33,11 @@
         <tr>
           <td>{{ c.nombre }}</td>
           <td><code>{{ c.codigo_contenedor }}</code></td>
+          <td>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalQr{{ c.id }}">
+              <i class="bi bi-qr-code"></i> Ver QR
+            </button>
+          </td>
           <td>{{ c.sector.zona.nombre }} / {{ c.sector.nombre }}</td>
           <td>{{ c.capacidad_max }} L</td>
           <td style="min-width: 180px;">
@@ -51,7 +57,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="7" class="text-center text-muted py-4">No hay contenedores registrados.</td></tr>
+        <tr><td colspan="8" class="text-center text-muted py-4">No hay contenedores registrados.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -156,6 +162,29 @@
         <button type="submit" class="btn btn-primary">Guardar cambios</button>
       </div>
     </form>
+  </div>
+</div>
+{% endfor %}
+
+{% for c in contenedores %}
+<div class="modal fade" id="modalQr{{ c.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content text-center">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">QR — {{ c.nombre }}</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <img src="{{ url_for('contenedores.qr_png', contenedor_id=c.id) }}" alt="Código QR de {{ c.nombre }}" class="img-fluid mb-2" width="220" height="220">
+        <div><code>{{ c.codigo_contenedor }}</code></div>
+        <p class="text-muted small mt-2 mb-0">Este código identifica al contenedor y a su dispositivo embebido. Al escanearlo desde la ruta asignada en la app móvil, el contenedor se marca como recolectado.</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <a class="btn btn-primary btn-sm" href="{{ url_for('contenedores.qr_png', contenedor_id=c.id, download=1) }}">
+          <i class="bi bi-download"></i> Descargar PNG
+        </a>
+      </div>
+    </div>
   </div>
 </div>
 {% endfor %}

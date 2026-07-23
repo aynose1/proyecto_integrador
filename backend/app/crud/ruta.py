@@ -2,15 +2,20 @@ from sqlalchemy.orm import Session
 
 from app.crud.base import CRUDBase
 from app.models.catalogos import Estado
+from app.models.contenedor import Contenedor
 from app.models.ruta import DetalleRuta, Ruta
 from app.schemas.ruta import RutaCreate, RutaUpdate
 
 
-def _estado_pendiente_id(db: Session) -> int:
-    estado = db.query(Estado).filter(Estado.estado == "pendiente").first()
+def _estado_id_por_nombre(db: Session, nombre: str) -> int:
+    estado = db.query(Estado).filter(Estado.estado == nombre).first()
     if not estado:
-        raise ValueError("El catálogo 'estados' no tiene un registro 'pendiente'. Revisa el seeder.")
+        raise ValueError(f"El catálogo 'estados' no tiene un registro '{nombre}'. Revisa el seeder.")
     return estado.id
+
+
+def _estado_pendiente_id(db: Session) -> int:
+    return _estado_id_por_nombre(db, "pendiente")
 
 
 class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
@@ -59,6 +64,28 @@ class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
             .limit(limit)
             .all()
         )
+
+    def marcar_recolectado(self, db: Session, ruta: Ruta, codigo_contenedor: str) -> DetalleRuta | None:
+        """
+        Busca, dentro de ESTA ruta, el detalle cuyo contenedor tiene el
+        codigo_contenedor escaneado, y lo pasa a estado 'recolectado'.
+        Devuelve None si ese contenedor no forma parte de la ruta (para
+        que la vista responda 404 en vez de modificar algo fuera de lugar).
+        """
+        detalle = (
+            db.query(DetalleRuta)
+            .join(Contenedor, DetalleRuta.id_contenedor == Contenedor.id)
+            .filter(DetalleRuta.id_ruta == ruta.id, Contenedor.codigo_contenedor == codigo_contenedor)
+            .first()
+        )
+        if not detalle:
+            return None
+
+        detalle.id_estado = _estado_id_por_nombre(db, "recolectado")
+        db.add(detalle)
+        db.commit()
+        db.refresh(detalle)
+        return detalle
 
 
 ruta = CRUDRuta(Ruta)

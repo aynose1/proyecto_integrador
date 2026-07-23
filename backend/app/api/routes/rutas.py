@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud
-from app.api.deps import get_current_user, require_admin
+from app.api.deps import get_current_user, require_admin, require_recolector
 from app.db.session import get_db
 from app.models.usuario import Usuario
-from app.schemas.ruta import RutaCreate, RutaRead, RutaSummary, RutaUpdate
+from app.schemas.ruta import DetalleRutaRead, RecolectarContenedorRequest, RutaCreate, RutaRead, RutaSummary, RutaUpdate
 
 router = APIRouter(prefix="/rutas", tags=["rutas"])
 
@@ -65,3 +65,29 @@ def eliminar_ruta(ruta_id: int, db: Session = Depends(get_db)) -> None:
     if not ruta_obj:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ruta no encontrada")
     crud.ruta.remove(db, ruta_id)
+
+
+@router.post("/{ruta_id}/recolectar", response_model=DetalleRutaRead)
+def marcar_contenedor_recolectado(
+    ruta_id: int,
+    payload: RecolectarContenedorRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_recolector),
+):
+    """
+    Llamado por la app móvil al escanear el QR de un contenedor durante
+    una ruta: pasa ese contenedor, dentro de ESTA ruta, de 'pendiente' a
+    'recolectado'. Protegido contra BOLA: solo el recolector dueño de la
+    ruta puede marcarla, igual que en GET /rutas/{id}.
+    """
+    ruta_obj = crud.ruta.get(db, ruta_id)
+    if not ruta_obj:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ruta no encontrada")
+    if ruta_obj.id_usuario != current_user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "No tienes acceso a esta ruta")
+
+    detalle = crud.ruta.marcar_recolectado(db, ruta_obj, payload.codigo_contenedor)
+    if not detalle:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese contenedor no forma parte de esta ruta")
+
+    return detalle

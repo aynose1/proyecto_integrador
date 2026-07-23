@@ -28,6 +28,11 @@ class RutaUpdate(BaseModel):
     ids_contenedores: list[int] | None = None  # si se manda, reemplaza el detalle completo
 
 
+class RecolectarContenedorRequest(BaseModel):
+    """Body que manda la app móvil al escanear el QR de un contenedor dentro de una ruta."""
+    codigo_contenedor: str = Field(max_length=50)
+
+
 class DetalleRutaRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int

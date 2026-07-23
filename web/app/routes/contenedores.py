@@ -1,4 +1,7 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from io import BytesIO
+
+import qrcode
+from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
 
 from app.api_client import APIError, api_request
 from app.decorators import admin_required
@@ -76,3 +79,29 @@ def eliminar(contenedor_id: int):
     except APIError as exc:
         flash(exc.message, "danger")
     return redirect(url_for("contenedores.listar"))
+
+
+@bp.route("/<int:contenedor_id>/qr.png")
+@admin_required
+def qr_png(contenedor_id: int):
+    """
+    Genera la imagen del código QR de un contenedor. Codifica únicamente
+    codigo_contenedor (el mismo identificador que ya usa el contenedor
+    como dispositivo y que la app móvil mandará a
+    POST /rutas/{id}/recolectar al escanearlo).
+    """
+    try:
+        contenedor = api_request("get", f"/contenedores/{contenedor_id}")
+    except APIError:
+        abort(404)
+
+    img = qrcode.make(contenedor["codigo_contenedor"], border=2)
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    response = Response(buffer.getvalue(), mimetype="image/png")
+    if request.args.get("download"):
+        filename = f"qr-{contenedor['codigo_contenedor']}.png"
+        response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
