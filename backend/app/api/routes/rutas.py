@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app import crud
@@ -12,18 +14,24 @@ router = APIRouter(prefix="/rutas", tags=["rutas"])
 
 @router.get("/me", response_model=list[RutaSummary])
 def listar_mis_rutas(
+    fecha: date | None = Query(default=None, description="Filtra por fecha exacta (YYYY-MM-DD)"),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ) -> list:
     """El recolector consulta únicamente sus propias rutas asignadas."""
-    return crud.ruta.get_multi_por_usuario(db, current_user.id, skip=skip, limit=limit)
+    return crud.ruta.get_multi_por_usuario(db, current_user.id, skip=skip, limit=limit, fecha=fecha)
 
 
 @router.get("", response_model=list[RutaSummary], dependencies=[Depends(require_admin)])
-def listar_rutas(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)) -> list:
-    return crud.ruta.get_multi(db, skip=skip, limit=limit)
+def listar_rutas(
+    fecha: date | None = Query(default=None, description="Filtra por fecha exacta (YYYY-MM-DD); si se omite, regresa de todas las fechas"),
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+) -> list:
+    return crud.ruta.get_multi(db, skip=skip, limit=limit, fecha=fecha)
 
 
 @router.get("/{ruta_id}", response_model=RutaRead)

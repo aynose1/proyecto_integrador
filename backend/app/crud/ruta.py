@@ -1,4 +1,6 @@
-from sqlalchemy.orm import Session
+from datetime import date
+
+from sqlalchemy.orm import Session, selectinload
 
 from app.crud.base import CRUDBase
 from app.models.catalogos import Estado
@@ -19,6 +21,26 @@ def _estado_pendiente_id(db: Session) -> int:
 
 
 class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
+    def _query_con_detalles(self, db: Session):
+        # completada (y el listado de contenedores) necesitan detalles +
+        # su estado ya cargados; sin esto cada acceso dispararía una
+        # consulta nueva por ruta (N+1).
+        return db.query(Ruta).options(
+            selectinload(Ruta.detalles).joinedload(DetalleRuta.estado),
+            selectinload(Ruta.detalles).joinedload(DetalleRuta.contenedor),
+        )
+
+    def get(self, db: Session, id: int) -> Ruta | None:
+        return self._query_con_detalles(db).filter(Ruta.id == id).first()
+
+    def get_multi(
+        self, db: Session, skip: int = 0, limit: int = 100, fecha: date | None = None
+    ) -> list[Ruta]:
+        query = self._query_con_detalles(db)
+        if fecha is not None:
+            query = query.filter(Ruta.fecha == fecha)
+        return query.order_by(Ruta.fecha.desc(), Ruta.id.desc()).offset(skip).limit(limit).all()
+
     def create(self, db: Session, obj_in: RutaCreate) -> Ruta:
         estado_pendiente_id = _estado_pendiente_id(db)
         ruta = Ruta(
@@ -55,15 +77,14 @@ class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
         db.refresh(db_obj)
         return db_obj
 
-    def get_multi_por_usuario(self, db: Session, id_usuario: int, skip: int = 0, limit: int = 100) -> list[Ruta]:
+    def get_multi_por_usuario(
+        self, db: Session, id_usuario: int, skip: int = 0, limit: int = 100, fecha: date | None = None
+    ) -> list[Ruta]:
         """Usado por el recolector: solo sus propias rutas (protección BOLA)."""
-        return (
-            db.query(Ruta)
-            .filter(Ruta.id_usuario == id_usuario)
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        query = self._query_con_detalles(db).filter(Ruta.id_usuario == id_usuario)
+        if fecha is not None:
+            query = query.filter(Ruta.fecha == fecha)
+        return query.order_by(Ruta.fecha.desc(), Ruta.id.desc()).offset(skip).limit(limit).all()
 
     def marcar_recolectado(self, db: Session, ruta: Ruta, codigo_contenedor: str) -> DetalleRuta | None:
         """

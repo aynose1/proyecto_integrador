@@ -18,6 +18,15 @@ class Ruta(Base):
     recolector = relationship("Usuario", back_populates="rutas")
     detalles = relationship("DetalleRuta", back_populates="ruta", cascade="all, delete-orphan")
 
+    @property
+    def completada(self) -> bool:
+        """
+        Calculado, no almacenado: una ruta está completada cuando tiene
+        al menos un contenedor y todos sus detalles quedaron en estado
+        'recolectado'. Al no guardarse en la BD, nunca puede desincronizarse.
+        """
+        return bool(self.detalles) and all(d.estado.estado == "recolectado" for d in self.detalles)
+
 
 class DetalleRuta(Base):
     """Tabla puente N:N entre Rutas y Contenedores, con estado propio por contenedor-ruta."""

@@ -45,6 +45,7 @@ class RutaRead(RutaBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     detalles: list[DetalleRutaRead] = []
+    completada: bool
 
 
 class RutaSummary(BaseModel):
@@ -55,3 +56,4 @@ class RutaSummary(BaseModel):
     fecha: date
     hora_inicio: time | None
     hora_fin: time | None
+    completada: bool

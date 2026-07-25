@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app.api_client import APIError, api_request
@@ -16,9 +18,16 @@ def _load_form_data():
 @bp.route("")
 @admin_required
 def listar():
+    # Por defecto se muestran las rutas de HOY. ?fecha=todas quita el
+    # filtro; ?fecha=YYYY-MM-DD muestra un día específico (para navegar
+    # a otros días con los botones de la plantilla).
+    fecha_param = request.args.get("fecha", date.today().isoformat())
+    fecha_filtro = None if fecha_param == "todas" else fecha_param
+
     try:
         form_data = _load_form_data()
-        resumenes = api_request("get", "/rutas")
+        params = {"fecha": fecha_filtro} if fecha_filtro else {}
+        resumenes = api_request("get", "/rutas", params=params)
         rutas = []
         for resumen in resumenes:
             detalle = api_request("get", f"/rutas/{resumen['id']}")
@@ -33,12 +42,19 @@ def listar():
         usuarios_map = {}
         form_data = {"recolectores": [], "contenedores": []}
 
+    dia_actual = date.fromisoformat(fecha_filtro) if fecha_filtro else None
+
     return render_template(
         "rutas/list.html",
         rutas=rutas,
         usuarios=usuarios_map,
         recolectores=form_data["recolectores"],
         contenedores=form_data["contenedores"],
+        fecha_filtro=fecha_filtro,
+        dia_actual=dia_actual,
+        dia_anterior=(dia_actual - timedelta(days=1)).isoformat() if dia_actual else None,
+        dia_siguiente=(dia_actual + timedelta(days=1)).isoformat() if dia_actual else None,
+        hoy=date.today().isoformat(),
     )
 
 
