@@ -10,48 +10,75 @@
 </head>
 <body>
   {% if session.get('access_token') %}
-  <nav class="navbar navbar-expand-lg navbar-dark navbar-brand-admin">
-    <div class="container-fluid">
-      <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('dashboard.index') }}">
-        <!-- Espacio reservado para el logotipo definitivo. Sustituye este
-             div por <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ app_name }}" height="32">
-             cuando tengas el archivo listo, y colócalo en web/app/static/img/logo.png -->
-        <span class="logo-placeholder" aria-hidden="true">LOGO</span>
-        {{ app_name }}
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="mainNav">
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('dashboard.') %}active{% endif %}" href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
-          <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('rutas.') %}active{% endif %}" href="{{ url_for('rutas.listar') }}">Rutas</a></li>
-          <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('contenedores.') %}active{% endif %}" href="{{ url_for('contenedores.listar') }}">Contenedores</a></li>
-          <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('usuarios.') %}active{% endif %}" href="{{ url_for('usuarios.listar') }}">Usuarios</a></li>
-          <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('ubicaciones.') %}active{% endif %}" href="{{ url_for('ubicaciones.listar') }}">Ubicaciones</a></li>
-          <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('reportes.') %}active{% endif %}" href="{{ url_for('reportes.index') }}">Reportes</a></li>
-        </ul>
-        <span class="navbar-text text-light me-3">{{ session.get('user_name', 'Administrador') }}</span>
-        <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.logout') }}">Salir</a>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__brand">
+        <a class="d-flex align-items-center gap-2 text-decoration-none" href="{{ url_for('dashboard.index') }}">
+          <!-- Espacio reservado para el logotipo definitivo. Sustituye este
+               span por <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ app_name }}" height="32">
+               cuando tengas el archivo listo, y colócalo en web/app/static/img/logo.png -->
+          <span class="logo-placeholder" aria-hidden="true">LOGO</span>
+          <span class="sidebar__brand-name">{{ app_name }}</span>
+        </a>
+        <button class="sidebar__close d-lg-none" type="button" id="sidebarClose" aria-label="Cerrar menú">
+          <i class="bi bi-x-lg"></i>
+        </button>
       </div>
-    </div>
-  </nav>
-  {% endif %}
 
-  {% if session.get('access_token') %}
-  <main class="container-fluid py-4 px-4">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </main>
+      <nav class="sidebar__nav">
+        <a class="sidebar__link {% if request.endpoint and request.endpoint.startswith('dashboard.') %}active{% endif %}" href="{{ url_for('dashboard.index') }}">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        <a class="sidebar__link {% if request.endpoint and request.endpoint.startswith('rutas.') %}active{% endif %}" href="{{ url_for('rutas.listar') }}">
+          <i class="bi bi-signpost-split"></i> Rutas
+        </a>
+        <a class="sidebar__link {% if request.endpoint and request.endpoint.startswith('contenedores.') %}active{% endif %}" href="{{ url_for('contenedores.listar') }}">
+          <i class="bi bi-trash3"></i> Contenedores
+        </a>
+        <a class="sidebar__link {% if request.endpoint and request.endpoint.startswith('ubicaciones.') %}active{% endif %}" href="{{ url_for('ubicaciones.listar') }}">
+          <i class="bi bi-geo-alt"></i> Ubicaciones
+        </a>
+        <a class="sidebar__link {% if request.endpoint and request.endpoint.startswith('usuarios.') %}active{% endif %}" href="{{ url_for('usuarios.listar') }}">
+          <i class="bi bi-people"></i> Usuarios
+        </a>
+        <a class="sidebar__link {% if request.endpoint and request.endpoint.startswith('reportes.') %}active{% endif %}" href="{{ url_for('reportes.index') }}">
+          <i class="bi bi-file-earmark-bar-graph"></i> Reportes
+        </a>
+      </nav>
+
+      <div class="sidebar__footer">
+        <div class="small text-truncate">{{ session.get('user_name', 'Administrador') }}</div>
+        <a class="btn btn-outline-light btn-sm w-100 mt-2" href="{{ url_for('auth.logout') }}">
+          <i class="bi bi-box-arrow-right"></i> Salir
+        </a>
+      </div>
+    </aside>
+
+    <div class="sidebar-backdrop d-lg-none" id="sidebarBackdrop"></div>
+
+    <div class="app-content">
+      <header class="topbar d-lg-none">
+        <button class="btn btn-sm btn-outline-secondary" type="button" id="sidebarToggle" aria-label="Abrir menú">
+          <i class="bi bi-list"></i>
+        </button>
+        <span class="fw-semibold">{{ app_name }}</span>
+      </header>
+
+      <main class="container-fluid py-4 px-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
   {% else %}
   <main class="auth-wrapper">
     <div class="auth-stack">
@@ -71,6 +98,17 @@
   {% endif %}
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const openBtn = document.getElementById('sidebarToggle');
+    const closeBtn = document.getElementById('sidebarClose');
+    function openSidebar() { sidebar?.classList.add('sidebar--open'); backdrop?.classList.add('sidebar-backdrop--visible'); }
+    function closeSidebar() { sidebar?.classList.remove('sidebar--open'); backdrop?.classList.remove('sidebar-backdrop--visible'); }
+    openBtn?.addEventListener('click', openSidebar);
+    closeBtn?.addEventListener('click', closeSidebar);
+    backdrop?.addEventListener('click', closeSidebar);
+  </script>
   {% block scripts %}{% endblock %}
 </body>
 </html>
