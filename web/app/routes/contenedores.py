@@ -42,6 +42,7 @@ def crear():
         "nombre": request.form["nombre"].strip(),
         "codigo_contenedor": request.form["codigo_contenedor"].strip(),
         "capacidad_max": float(request.form["capacidad_max"]),
+        "altura_cm": float(request.form["altura_cm"]),
         "id_sector": int(request.form["id_sector"]),
         "id_estado": int(request.form["id_estado"]),
     }
@@ -59,6 +60,7 @@ def editar(contenedor_id: int):
     payload = {
         "nombre": request.form["nombre"].strip(),
         "capacidad_max": float(request.form["capacidad_max"]),
+        "altura_cm": float(request.form["altura_cm"]),
         "id_sector": int(request.form["id_sector"]),
         "id_estado": int(request.form["id_estado"]),
     }

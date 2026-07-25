@@ -25,5 +25,9 @@ class RegistroNivel(Base):
     fecha_hora: Mapped["DateTime"] = mapped_column(DateTime, nullable=False, index=True)
     nivel_porcentaje: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
     origen: Mapped[OrigenRegistro] = mapped_column(Enum(OrigenRegistro), nullable=False)
+    # Distancia cruda (cm) que mandó el sensor, antes de convertirla a
+    # porcentaje. Se conserva para poder auditar/depurar el cálculo;
+    # es NULL en registros de origen 'manual' (no vienen de un sensor).
+    distancia_cm: Mapped[float | None] = mapped_column(Numeric(6, 2), nullable=True)
 
     contenedor = relationship("Contenedor", back_populates="registros_nivel")

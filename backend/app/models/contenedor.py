@@ -12,6 +12,11 @@ class Contenedor(Base):
     # codigo_contenedor es el valor que se codifica en el QR físico del contenedor
     codigo_contenedor: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     capacidad_max: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
+    # Distancia en cm desde el sensor (instalado en la tapa/borde) hasta
+    # el fondo del contenedor vacío. Necesaria para convertir la
+    # distancia cruda que manda el sensor ultrasónico en un porcentaje
+    # de llenado: nivel% = 100 - (distancia_medida / altura_cm * 100).
+    altura_cm: Mapped[float | None] = mapped_column(Numeric(6, 2), nullable=True)
 
     id_sector: Mapped[int] = mapped_column(ForeignKey("sectores.id"), nullable=False)
     id_estado: Mapped[int] = mapped_column(ForeignKey("estados.id"), nullable=False)

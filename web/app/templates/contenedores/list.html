@@ -39,7 +39,12 @@
             </button>
           </td>
           <td>{{ c.sector.zona.nombre }} / {{ c.sector.nombre }}</td>
-          <td>{{ c.capacidad_max }} L</td>
+          <td>
+            {{ c.capacidad_max }} L
+            {% if c.altura_cm is none %}
+            <div><span class="badge bg-warning text-dark" title="El sensor de este contenedor no podrá mandar lecturas hasta configurarla">Falta altura</span></div>
+            {% endif %}
+          </td>
           <td style="min-width: 180px;">
             <div class="d-flex align-items-center gap-2">
               <div class="progress flex-grow-1 nivel-bar" role="progressbar">
@@ -84,6 +89,11 @@
         <div class="mb-3">
           <label class="form-label" for="c_cap">Capacidad máxima (L)</label>
           <input type="number" step="0.01" min="0.01" class="form-control" id="c_cap" name="capacidad_max" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="c_altura">Altura del sensor al fondo (cm)</label>
+          <input type="number" step="0.01" min="0.01" class="form-control" id="c_altura" name="altura_cm" required>
+          <div class="form-text">Distancia desde donde va instalado el sensor hasta el fondo del contenedor vacío. Se usa para convertir la lectura del sensor en porcentaje de llenado.</div>
         </div>
         <div class="mb-3">
           <label class="form-label" for="c_sector">Sector</label>
@@ -139,6 +149,15 @@
         <div class="mb-3">
           <label class="form-label" for="ce_cap_{{ c.id }}">Capacidad máxima (L)</label>
           <input type="number" step="0.01" min="0.01" class="form-control" id="ce_cap_{{ c.id }}" name="capacidad_max" required value="{{ c.capacidad_max }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="ce_altura_{{ c.id }}">Altura del sensor al fondo (cm)</label>
+          <input type="number" step="0.01" min="0.01" class="form-control" id="ce_altura_{{ c.id }}" name="altura_cm" required value="{{ c.altura_cm if c.altura_cm is not none else '' }}">
+          {% if c.altura_cm is none %}
+          <div class="form-text text-warning">Sin configurar todavía: el sensor de este contenedor no podrá mandar lecturas hasta que la captures.</div>
+          {% else %}
+          <div class="form-text">Distancia desde donde va instalado el sensor hasta el fondo del contenedor vacío.</div>
+          {% endif %}
         </div>
         <div class="mb-3">
           <label class="form-label" for="ce_sector_{{ c.id }}">Sector</label>

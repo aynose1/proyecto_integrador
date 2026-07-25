@@ -15,17 +15,21 @@ class CRUDRegistroNivel:
         nivel_porcentaje,
         origen: OrigenRegistro,
         fecha_hora: datetime | None = None,
+        distancia_cm=None,
     ) -> RegistroNivel:
         """
         Inserta un registro en el historial Y actualiza Contenedor.nivel_actual
         en la misma transacción, como se definió: nivel_actual es un valor
         denormalizado que siempre refleja la lectura más reciente.
+        distancia_cm solo aplica a lecturas de sensor (se guarda para
+        poder auditar el cálculo); en 'vaciar' manual se deja en None.
         """
         registro = RegistroNivel(
             id_contenedor=contenedor.id,
             fecha_hora=fecha_hora or datetime.utcnow(),
             nivel_porcentaje=nivel_porcentaje,
             origen=origen,
+            distancia_cm=distancia_cm,
         )
         db.add(registro)
         contenedor.nivel_actual = nivel_porcentaje
