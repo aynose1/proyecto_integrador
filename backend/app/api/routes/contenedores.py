@@ -49,6 +49,11 @@ def obtener_contenedor(
 def crear_contenedor(payload: ContenedorCreate, db: Session = Depends(get_db)):
     if crud.contenedor.get_by_codigo(db, payload.codigo_contenedor):
         raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un contenedor con ese código")
+    if not crud.contenedor.estado_es_valido_para_contenedor(db, payload.id_estado):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "id_estado inválido: un contenedor solo puede estar 'activo' o 'inactivo'",
+        )
     return crud.contenedor.create(db, payload)
 
 
@@ -57,6 +62,11 @@ def actualizar_contenedor(contenedor_id: int, payload: ContenedorUpdate, db: Ses
     cont = crud.contenedor.get(db, contenedor_id)
     if not cont:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Contenedor no encontrado")
+    if payload.id_estado is not None and not crud.contenedor.estado_es_valido_para_contenedor(db, payload.id_estado):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "id_estado inválido: un contenedor solo puede estar 'activo' o 'inactivo'",
+        )
     return crud.contenedor.update(db, cont, payload)
 
 

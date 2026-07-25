@@ -53,7 +53,20 @@
               <span class="small fw-semibold">{{ nivel }}%</span>
             </div>
           </td>
-          <td><span class="badge text-bg-light border">{{ c.estado.estado|capitalize }}</span></td>
+          <td>
+            <form method="post" action="{{ url_for('contenedores.cambiar_estado', contenedor_id=c.id) }}" class="d-inline">
+              {% set es_activo = c.estado.estado|lower == 'activo' %}
+              <input type="hidden" name="id_estado" value="{{ estado_inactivo_id if es_activo else estado_activo_id }}">
+              <div class="form-check form-switch mb-0" title="{{ 'Desactivar' if es_activo else 'Activar' }} contenedor">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       id="switch_estado_{{ c.id }}" {{ 'checked' if es_activo }}
+                       onchange="this.form.submit()" {{ 'disabled' if not estado_activo_id or not estado_inactivo_id }}>
+                <label class="form-check-label small" for="switch_estado_{{ c.id }}">
+                  {{ 'Activo' if es_activo else 'Inactivo' }}
+                </label>
+              </div>
+            </form>
+          </td>
           <td class="text-end">
             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalContenedorEditar{{ c.id }}">Editar</button>
             <form method="post" action="{{ url_for('contenedores.eliminar', contenedor_id=c.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este contenedor?')">

@@ -14,23 +14,39 @@ def _sector_label(sector: dict) -> str:
     return f"ID {sector['id']} — {zona.get('nombre', '?')} / {sector.get('nombre', '?')}"
 
 
+def _estados_contenedor(todos_los_estados: list[dict]) -> list[dict]:
+    """
+    Un contenedor solo admite 'activo'/'inactivo'. El catálogo de
+    estados es compartido con DetalleRuta (pendiente/recolectado) e
+    Incidencia (pendiente/atendido) — por eso se filtra aquí en vez de
+    tocar /catalogos/estados, que otras pantallas sí necesitan completo.
+    """
+    return [e for e in todos_los_estados if e["estado"].lower() in ("activo", "inactivo")]
+
+
 @bp.route("")
 @admin_required
 def listar():
     try:
         contenedores = api_request("get", "/contenedores")
         sectores = api_request("get", "/sectores")
-        estados = api_request("get", "/catalogos/estados")
+        estados = _estados_contenedor(api_request("get", "/catalogos/estados"))
     except APIError as exc:
         flash(exc.message, "danger")
         contenedores = []
         sectores = []
         estados = []
+
+    estado_activo = next((e for e in estados if e["estado"].lower() == "activo"), None)
+    estado_inactivo = next((e for e in estados if e["estado"].lower() == "inactivo"), None)
+
     return render_template(
         "contenedores/list.html",
         contenedores=contenedores,
         sectores=sectores,
         estados=estados,
+        estado_activo_id=estado_activo["id"] if estado_activo else None,
+        estado_inactivo_id=estado_inactivo["id"] if estado_inactivo else None,
         sector_label=_sector_label,
     )
 
@@ -78,6 +94,22 @@ def eliminar(contenedor_id: int):
     try:
         api_request("delete", f"/contenedores/{contenedor_id}")
         flash("Contenedor eliminado.", "success")
+    except APIError as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("contenedores.listar"))
+
+
+@bp.route("/<int:contenedor_id>/estado", methods=["POST"])
+@admin_required
+def cambiar_estado(contenedor_id: int):
+    """Switch rápido activo/inactivo desde la tabla, sin abrir el modal de edición."""
+    id_estado = request.form.get("id_estado", type=int)
+    if not id_estado:
+        flash("No se pudo determinar el nuevo estado.", "danger")
+        return redirect(url_for("contenedores.listar"))
+    try:
+        api_request("put", f"/contenedores/{contenedor_id}", data={"id_estado": id_estado})
+        flash("Estado del contenedor actualizado.", "success")
     except APIError as exc:
         flash(exc.message, "danger")
     return redirect(url_for("contenedores.listar"))
