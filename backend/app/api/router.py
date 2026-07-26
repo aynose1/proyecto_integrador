@@ -4,6 +4,7 @@ from app.api.routes import (
     auth,
     catalogos,
     contenedores,
+    dashboard,
     incidencias,
     notificaciones,
     registros_nivel,
@@ -24,3 +25,4 @@ api_router.include_router(notificaciones.router)
 api_router.include_router(zonas.router)
 api_router.include_router(sectores.router)
 api_router.include_router(catalogos.router)
+api_router.include_router(dashboard.router)

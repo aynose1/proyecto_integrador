@@ -1,4 +1,5 @@
 from app.crud import catalogos  # noqa: F401
+from app.crud import dashboard  # noqa: F401
 from app.crud.contenedor import contenedor  # noqa: F401
 from app.crud.incidencia import incidencia  # noqa: F401
 from app.crud.notificacion import notificacion  # noqa: F401
