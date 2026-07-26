@@ -38,6 +38,11 @@ class DetalleRutaEstadoUpdate(BaseModel):
     id_estado: int
 
 
+class RutaEstadoUpdate(BaseModel):
+    """Cambia el estado propio de la ruta (pendiente/en progreso/completada/cancelada)."""
+    id_estado: int
+
+
 class DetalleRutaRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -51,6 +56,7 @@ class RutaRead(RutaBase):
     id: int
     detalles: list[DetalleRutaRead] = []
     completada: bool
+    estado: EstadoRead | None
 
 
 class RutaSummary(BaseModel):
@@ -62,3 +68,4 @@ class RutaSummary(BaseModel):
     hora_inicio: time | None
     hora_fin: time | None
     completada: bool
+    estado: EstadoRead | None

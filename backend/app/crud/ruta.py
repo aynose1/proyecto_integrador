@@ -26,6 +26,10 @@ def _estado_pendiente_id(db: Session) -> int:
 # criterio que ya se aplicó a Contenedor.id_estado.
 ESTADOS_VALIDOS_DETALLE_RUTA = {"pendiente", "recolectado"}
 
+# La RUTA en sí (no sus contenedores) tiene su propio ciclo de vida,
+# manual e independiente de si ya se recolectó todo.
+ESTADOS_VALIDOS_RUTA = {"pendiente", "en progreso", "completada", "cancelada"}
+
 
 class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
     def _query_con_detalles(self, db: Session):
@@ -56,6 +60,7 @@ class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
             fecha=obj_in.fecha,
             hora_inicio=obj_in.hora_inicio,
             hora_fin=obj_in.hora_fin,
+            id_estado=estado_pendiente_id,
         )
         db.add(ruta)
         db.flush()  # para obtener ruta.id antes del commit
@@ -141,6 +146,23 @@ class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
         db.commit()
         db.refresh(detalle)
         return detalle
+
+    def estado_es_valido_para_ruta(self, db: Session, id_estado: int) -> bool:
+        estado = db.query(Estado).filter(Estado.id == id_estado).first()
+        return estado is not None and estado.estado in ESTADOS_VALIDOS_RUTA
+
+    def actualizar_estado_ruta(self, db: Session, ruta: Ruta, id_estado: int) -> Ruta:
+        """
+        Cambia el estado propio de la ruta (pendiente/en progreso/
+        completada/cancelada). Es independiente de `completada`: no
+        toca ni un solo DetalleRuta, así que nunca desincroniza el
+        cálculo de contenedores recolectados.
+        """
+        ruta.id_estado = id_estado
+        db.add(ruta)
+        db.commit()
+        db.refresh(ruta)
+        return ruta
 
 
 ruta = CRUDRuta(Ruta)

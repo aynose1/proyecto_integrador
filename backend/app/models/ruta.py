@@ -14,9 +14,18 @@ class Ruta(Base):
     fecha: Mapped["Date"] = mapped_column(Date, nullable=False)
     hora_inicio: Mapped["Time"] = mapped_column(Time, nullable=True)
     hora_fin: Mapped["Time"] = mapped_column(Time, nullable=True)
+    # Estado propio e independiente de la ruta (pendiente/en progreso/
+    # completada/cancelada), que el administrador controla a mano. Es
+    # DISTINTO de `completada` (abajo): ese sigue siendo calculado a
+    # partir de los detalles y nunca se desincroniza; este es una
+    # bandera manual que puede o no coincidir con eso (ej. una ruta
+    # puede estar 'cancelada' aunque ya se hayan recolectado 2 de 3
+    # contenedores).
+    id_estado: Mapped[int | None] = mapped_column(ForeignKey("estados.id"), nullable=True)
 
     recolector = relationship("Usuario", back_populates="rutas")
     detalles = relationship("DetalleRuta", back_populates="ruta", cascade="all, delete-orphan")
+    estado = relationship("Estado")
 
     @property
     def completada(self) -> bool:
