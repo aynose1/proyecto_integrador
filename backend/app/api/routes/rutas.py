@@ -7,7 +7,7 @@ from app import crud
 from app.api.deps import get_current_user, require_admin, require_recolector
 from app.db.session import get_db
 from app.models.usuario import Usuario
-from app.schemas.ruta import DetalleRutaEstadoUpdate, DetalleRutaRead, RecolectarContenedorRequest, RutaCreate, RutaEstadoUpdate, RutaRead, RutaSummary, RutaUpdate
+from app.schemas.ruta import DetalleRutaEstadoUpdate, DetalleRutaRead, RecolectarContenedorRequest, RutaCreate, RutaRead, RutaSummary, RutaUpdate
 
 router = APIRouter(prefix="/rutas", tags=["rutas"])
 
@@ -130,24 +130,3 @@ def actualizar_estado_detalle(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese detalle no pertenece a esta ruta")
 
     return detalle
-
-
-@router.patch("/{ruta_id}/estado", response_model=RutaRead, dependencies=[Depends(require_admin)])
-def actualizar_estado_ruta(ruta_id: int, payload: RutaEstadoUpdate, db: Session = Depends(get_db)):
-    """
-    Cambia el estado propio de la ruta (pendiente/en progreso/
-    completada/cancelada) — un ciclo de vida manual e independiente de
-    `completada` (que sigue calculándose solo, a partir de si sus
-    contenedores ya están recolectados).
-    """
-    ruta_obj = crud.ruta.get(db, ruta_id)
-    if not ruta_obj:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ruta no encontrada")
-
-    if not crud.ruta.estado_es_valido_para_ruta(db, payload.id_estado):
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            "id_estado inválido: una ruta solo puede estar 'pendiente', 'en progreso', 'completada' o 'cancelada'",
-        )
-
-    return crud.ruta.actualizar_estado_ruta(db, ruta_obj, payload.id_estado)
