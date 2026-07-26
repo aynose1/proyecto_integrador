@@ -36,11 +36,17 @@ class ContenedorCritico(BaseModel):
     sector: str
 
 
+class RecoleccionDia(BaseModel):
+    dia: str
+    total: int
+
+
 class DashboardResumen(BaseModel):
     fecha: date
     total_contenedores: int
     contenedores_llenado_alto: int
     distribucion_nivel: DistribucionNivel
     promedio_por_zona: list[PromedioZona]
+    recolecciones_por_dia_semana: list[RecoleccionDia]
     recolectores_hoy: list[RecolectorHoy]
     contenedores_criticos: list[ContenedorCritico]

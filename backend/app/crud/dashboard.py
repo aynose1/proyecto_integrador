@@ -3,6 +3,7 @@ from datetime import date as date_type
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload, selectinload
 
+from app.models.catalogos import Estado
 from app.models.contenedor import Contenedor
 from app.models.ruta import DetalleRuta, Ruta
 from app.models.usuario import Usuario
@@ -10,6 +11,9 @@ from app.models.zona_sector import Sector, Zona
 
 UMBRAL_MEDIO = 50
 UMBRAL_ALTO = 80
+
+# date.weekday(): lunes=0 ... domingo=6
+DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
 
 def _distribucion_nivel(contenedores: list[Contenedor]) -> dict:
@@ -55,6 +59,27 @@ def _promedio_por_zona(db: Session) -> list[dict]:
         }
         for nombre, promedio, total in filas
     ]
+
+
+def _recolecciones_por_dia_semana(db: Session) -> list[dict]:
+    """
+    Cuenta, sobre TODO el histórico de rutas (no solo hoy — un día no
+    alcanza para mostrar un patrón semanal), cuántos contenedores se
+    marcaron 'recolectado', agrupados por el día de la semana de la
+    fecha de la ruta a la que pertenecen. No se agregó ninguna columna
+    nueva: Ruta.fecha ya alcanza para saber el día de la semana.
+    """
+    fechas = (
+        db.query(Ruta.fecha)
+        .join(DetalleRuta, DetalleRuta.id_ruta == Ruta.id)
+        .join(Estado, DetalleRuta.id_estado == Estado.id)
+        .filter(Estado.estado == "recolectado")
+        .all()
+    )
+    conteo = {dia: 0 for dia in DIAS_SEMANA}
+    for (fecha,) in fechas:
+        conteo[DIAS_SEMANA[fecha.weekday()]] += 1
+    return [{"dia": dia, "total": conteo[dia]} for dia in DIAS_SEMANA]
 
 
 def _recolectores_hoy(db: Session, fecha: date_type) -> list[dict]:
@@ -123,6 +148,7 @@ def resumen(db: Session, fecha: date_type) -> dict:
         "contenedores_llenado_alto": sum(1 for c in contenedores if float(c.nivel_actual) >= UMBRAL_ALTO),
         "distribucion_nivel": _distribucion_nivel(contenedores),
         "promedio_por_zona": _promedio_por_zona(db),
+        "recolecciones_por_dia_semana": _recolecciones_por_dia_semana(db),
         "recolectores_hoy": _recolectores_hoy(db, fecha),
         "contenedores_criticos": _contenedores_criticos(contenedores),
     }
