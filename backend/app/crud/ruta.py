@@ -20,6 +20,13 @@ def _estado_pendiente_id(db: Session) -> int:
     return _estado_id_por_nombre(db, "pendiente")
 
 
+# Un detalle de ruta (contenedor DENTRO de una ruta) solo tiene sentido
+# como pendiente o recolectado — nada de 'activo'/'inactivo' (eso es
+# del contenedor en sí) ni 'atendido' (eso es de Incidencia). Mismo
+# criterio que ya se aplicó a Contenedor.id_estado.
+ESTADOS_VALIDOS_DETALLE_RUTA = {"pendiente", "recolectado"}
+
+
 class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
     def _query_con_detalles(self, db: Session):
         # completada (y el listado de contenedores) necesitan detalles +
@@ -103,6 +110,33 @@ class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
             return None
 
         detalle.id_estado = _estado_id_por_nombre(db, "recolectado")
+        db.add(detalle)
+        db.commit()
+        db.refresh(detalle)
+        return detalle
+
+    def estado_es_valido_para_detalle(self, db: Session, id_estado: int) -> bool:
+        estado = db.query(Estado).filter(Estado.id == id_estado).first()
+        return estado is not None and estado.estado in ESTADOS_VALIDOS_DETALLE_RUTA
+
+    def actualizar_estado_detalle(
+        self, db: Session, ruta_id: int, detalle_id: int, id_estado: int
+    ) -> DetalleRuta | None:
+        """
+        Fuerza manualmente el estado de UN contenedor dentro de una
+        ruta (para pruebas o correcciones desde la web), sin pasar por
+        el flujo de escaneo de QR. Devuelve None si ese detalle no
+        pertenece a esa ruta, para no modificar algo fuera de lugar.
+        """
+        detalle = (
+            db.query(DetalleRuta)
+            .filter(DetalleRuta.id == detalle_id, DetalleRuta.id_ruta == ruta_id)
+            .first()
+        )
+        if not detalle:
+            return None
+
+        detalle.id_estado = id_estado
         db.add(detalle)
         db.commit()
         db.refresh(detalle)

@@ -7,7 +7,7 @@ from app import crud
 from app.api.deps import get_current_user, require_admin, require_recolector
 from app.db.session import get_db
 from app.models.usuario import Usuario
-from app.schemas.ruta import DetalleRutaRead, RecolectarContenedorRequest, RutaCreate, RutaRead, RutaSummary, RutaUpdate
+from app.schemas.ruta import DetalleRutaEstadoUpdate, DetalleRutaRead, RecolectarContenedorRequest, RutaCreate, RutaRead, RutaSummary, RutaUpdate
 
 router = APIRouter(prefix="/rutas", tags=["rutas"])
 
@@ -97,5 +97,36 @@ def marcar_contenedor_recolectado(
     detalle = crud.ruta.marcar_recolectado(db, ruta_obj, payload.codigo_contenedor)
     if not detalle:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese contenedor no forma parte de esta ruta")
+
+    return detalle
+
+
+@router.patch("/{ruta_id}/detalles/{detalle_id}", response_model=DetalleRutaRead, dependencies=[Depends(require_admin)])
+def actualizar_estado_detalle(
+    ruta_id: int,
+    detalle_id: int,
+    payload: DetalleRutaEstadoUpdate,
+    db: Session = Depends(get_db),
+):
+    """
+    El administrador fuerza manualmente pendiente/recolectado de un
+    contenedor dentro de una ruta, sin pasar por el escaneo de QR — útil
+    para pruebas o para corregir un registro. Restringido a esos dos
+    estados: el catálogo 'estados' es compartido con Contenedor e
+    Incidencia y no todos sus valores aplican aquí.
+    """
+    ruta_obj = crud.ruta.get(db, ruta_id)
+    if not ruta_obj:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ruta no encontrada")
+
+    if not crud.ruta.estado_es_valido_para_detalle(db, payload.id_estado):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "id_estado inválido: un contenedor dentro de una ruta solo puede estar 'pendiente' o 'recolectado'",
+        )
+
+    detalle = crud.ruta.actualizar_estado_detalle(db, ruta_id, detalle_id, payload.id_estado)
+    if not detalle:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese detalle no pertenece a esta ruta")
 
     return detalle

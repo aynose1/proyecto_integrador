@@ -36,11 +36,14 @@ def listar():
             ]
             rutas.append(detalle)
         usuarios_map = {u["id"]: u for u in form_data["usuarios"]}
+        todos_los_estados = api_request("get", "/catalogos/estados")
+        estados_detalle = [e for e in todos_los_estados if e["estado"].lower() in ("pendiente", "recolectado")]
     except APIError as exc:
         flash(exc.message, "danger")
         rutas = []
         usuarios_map = {}
         form_data = {"recolectores": [], "contenedores": []}
+        estados_detalle = []
 
     dia_actual = date.fromisoformat(fecha_filtro) if fecha_filtro else None
 
@@ -50,6 +53,7 @@ def listar():
         usuarios=usuarios_map,
         recolectores=form_data["recolectores"],
         contenedores=form_data["contenedores"],
+        estados_detalle=estados_detalle,
         fecha_filtro=fecha_filtro,
         dia_actual=dia_actual,
         dia_anterior=(dia_actual - timedelta(days=1)).isoformat() if dia_actual else None,
@@ -116,6 +120,27 @@ def eliminar(ruta_id: int):
     try:
         api_request("delete", f"/rutas/{ruta_id}")
         flash("Ruta eliminada.", "success")
+    except APIError as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("rutas.listar"))
+
+
+@bp.route("/<int:ruta_id>/detalles/<int:detalle_id>/estado", methods=["POST"])
+@admin_required
+def cambiar_estado_detalle(ruta_id: int, detalle_id: int):
+    """
+    Fuerza manualmente pendiente/recolectado de un contenedor dentro de
+    una ruta, sin depender del escaneo de QR — para pruebas o
+    correcciones. Es independiente del formulario de 'editar ruta'
+    completo, así no se pisa con el reemplazo de ids_contenedores.
+    """
+    id_estado = request.form.get("id_estado", type=int)
+    if not id_estado:
+        flash("No se pudo determinar el nuevo estado.", "danger")
+        return redirect(url_for("rutas.listar"))
+    try:
+        api_request("patch", f"/rutas/{ruta_id}/detalles/{detalle_id}", data={"id_estado": id_estado})
+        flash("Estado del contenedor actualizado.", "success")
     except APIError as exc:
         flash(exc.message, "danger")
     return redirect(url_for("rutas.listar"))

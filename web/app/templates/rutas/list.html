@@ -195,7 +195,15 @@
                 <td>{{ c.nombre }}</td>
                 <td><code>{{ c.codigo_contenedor }}</code></td>
                 <td>{{ nivel }}%</td>
-                <td><span class="badge text-bg-light border">{{ detalle.estado.estado|capitalize }}</span></td>
+                <td>
+                  <form method="post" action="{{ url_for('rutas.cambiar_estado_detalle', ruta_id=r.id, detalle_id=detalle.id) }}" class="d-inline">
+                    <select name="id_estado" class="form-select form-select-sm" style="width: auto; display: inline-block;" onchange="this.form.submit()">
+                      {% for e in estados_detalle %}
+                      <option value="{{ e.id }}" {% if detalle.estado.id == e.id %}selected{% endif %}>{{ e.estado|capitalize }}</option>
+                      {% endfor %}
+                    </select>
+                  </form>
+                </td>
               </tr>
               {% else %}
               <tr><td colspan="5" class="text-muted text-center">Sin contenedores</td></tr>

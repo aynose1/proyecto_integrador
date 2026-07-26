@@ -33,6 +33,11 @@ class RecolectarContenedorRequest(BaseModel):
     codigo_contenedor: str = Field(max_length=50)
 
 
+class DetalleRutaEstadoUpdate(BaseModel):
+    """Usado por el administrador para forzar manualmente pendiente/recolectado (pruebas, correcciones)."""
+    id_estado: int
+
+
 class DetalleRutaRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
