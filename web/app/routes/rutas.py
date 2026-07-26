@@ -38,12 +38,17 @@ def listar():
         usuarios_map = {u["id"]: u for u in form_data["usuarios"]}
         todos_los_estados = api_request("get", "/catalogos/estados")
         estados_detalle = [e for e in todos_los_estados if e["estado"].lower() in ("pendiente", "recolectado")]
+        estados_ruta = [
+            e for e in todos_los_estados
+            if e["estado"].lower() in ("pendiente", "en progreso", "completada", "cancelada")
+        ]
     except APIError as exc:
         flash(exc.message, "danger")
         rutas = []
         usuarios_map = {}
         form_data = {"recolectores": [], "contenedores": []}
         estados_detalle = []
+        estados_ruta = []
 
     dia_actual = date.fromisoformat(fecha_filtro) if fecha_filtro else None
 
@@ -54,6 +59,7 @@ def listar():
         recolectores=form_data["recolectores"],
         contenedores=form_data["contenedores"],
         estados_detalle=estados_detalle,
+        estados_ruta=estados_ruta,
         fecha_filtro=fecha_filtro,
         dia_actual=dia_actual,
         dia_anterior=(dia_actual - timedelta(days=1)).isoformat() if dia_actual else None,
@@ -141,6 +147,26 @@ def cambiar_estado_detalle(ruta_id: int, detalle_id: int):
     try:
         api_request("patch", f"/rutas/{ruta_id}/detalles/{detalle_id}", data={"id_estado": id_estado})
         flash("Estado del contenedor actualizado.", "success")
+    except APIError as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("rutas.listar"))
+
+
+@bp.route("/<int:ruta_id>/estado", methods=["POST"])
+@admin_required
+def cambiar_estado_ruta(ruta_id: int):
+    """
+    Cambia el estado propio de la ruta (pendiente/en progreso/
+    completada/cancelada). Independiente del estado de sus contenedores
+    (eso lo sigue mostrando el badge de 'completada', calculado aparte).
+    """
+    id_estado = request.form.get("id_estado", type=int)
+    if not id_estado:
+        flash("No se pudo determinar el nuevo estado.", "danger")
+        return redirect(url_for("rutas.listar"))
+    try:
+        api_request("patch", f"/rutas/{ruta_id}/estado", data={"id_estado": id_estado})
+        flash("Estado de la ruta actualizado.", "success")
     except APIError as exc:
         flash(exc.message, "danger")
     return redirect(url_for("rutas.listar"))
