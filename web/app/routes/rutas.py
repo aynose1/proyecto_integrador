@@ -125,22 +125,37 @@ def eliminar(ruta_id: int):
     return redirect(url_for("rutas.listar"))
 
 
-@bp.route("/<int:ruta_id>/detalles/<int:detalle_id>/estado", methods=["POST"])
+@bp.route("/<int:ruta_id>/detalles/estados", methods=["POST"])
 @admin_required
-def cambiar_estado_detalle(ruta_id: int, detalle_id: int):
+def confirmar_estados_detalle(ruta_id: int):
     """
-    Fuerza manualmente pendiente/recolectado de un contenedor dentro de
-    una ruta, sin depender del escaneo de QR — para pruebas o
-    correcciones. Es independiente del formulario de 'editar ruta'
-    completo, así no se pisa con el reemplazo de ids_contenedores.
+    Aplica de un solo clic los cambios de estado (pendiente/recolectado)
+    de todos los contenedores de la ruta que se hayan modificado en el
+    modal 'Ver ruta' — sin depender del escaneo de QR, para pruebas o
+    correcciones. Cada campo del formulario viene nombrado
+    'estado_detalle_<detalle_id>'.
     """
-    id_estado = request.form.get("id_estado", type=int)
-    if not id_estado:
-        flash("No se pudo determinar el nuevo estado.", "danger")
-        return redirect(url_for("rutas.listar"))
-    try:
-        api_request("patch", f"/rutas/{ruta_id}/detalles/{detalle_id}", data={"id_estado": id_estado})
-        flash("Estado del contenedor actualizado.", "success")
-    except APIError as exc:
-        flash(exc.message, "danger")
+    errores = 0
+    actualizados = 0
+    for campo, valor in request.form.items():
+        if not campo.startswith("estado_detalle_"):
+            continue
+        detalle_id = int(campo.removeprefix("estado_detalle_"))
+        id_estado = int(valor)
+        try:
+            api_request("patch", f"/rutas/{ruta_id}/detalles/{detalle_id}", data={"id_estado": id_estado})
+            actualizados += 1
+        except APIError as exc:
+            errores += 1
+            flash(f"Contenedor (detalle {detalle_id}): {exc.message}", "danger")
+
+    if actualizados and not errores:
+        flash(f"Estatus actualizado ({actualizados} contenedor{'es' if actualizados != 1 else ''}).", "success")
+    elif actualizados and errores:
+        flash(f"Se actualizó el estatus de {actualizados}, pero {errores} fallaron (ver arriba).", "warning")
+    elif errores:
+        flash("No se pudo cambiar el estatus (ver errores arriba).", "danger")
+    else:
+        flash("Esta ruta no tiene contenedores.", "info")
+
     return redirect(url_for("rutas.listar"))

@@ -175,6 +175,7 @@
       </div>
       <div class="modal-body">
         <p class="text-muted">Fecha {{ r.fecha }} · Recolector ID {{ r.id_usuario }}</p>
+        <form method="post" action="{{ url_for('rutas.confirmar_estados_detalle', ruta_id=r.id) }}" id="formEstados{{ r.id }}">
         <div class="table-responsive">
           <table class="table align-middle mb-0">
             <thead class="table-light">
@@ -196,13 +197,11 @@
                 <td><code>{{ c.codigo_contenedor }}</code></td>
                 <td>{{ nivel }}%</td>
                 <td>
-                  <form method="post" action="{{ url_for('rutas.cambiar_estado_detalle', ruta_id=r.id, detalle_id=detalle.id) }}" class="d-inline">
-                    <select name="id_estado" class="form-select form-select-sm" style="width: auto; display: inline-block;" onchange="this.form.submit()">
-                      {% for e in estados_detalle %}
-                      <option value="{{ e.id }}" {% if detalle.estado.id == e.id %}selected{% endif %}>{{ e.estado|capitalize }}</option>
-                      {% endfor %}
-                    </select>
-                  </form>
+                  <select name="estado_detalle_{{ detalle.id }}" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                    {% for e in estados_detalle %}
+                    <option value="{{ e.id }}" {% if detalle.estado.id == e.id %}selected{% endif %}>{{ e.estado|capitalize }}</option>
+                    {% endfor %}
+                  </select>
                 </td>
               </tr>
               {% else %}
@@ -211,9 +210,13 @@
             </tbody>
           </table>
         </div>
+        </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        {% if r.detalles %}
+        <button type="submit" form="formEstados{{ r.id }}" class="btn btn-primary">Cambiar estatus</button>
+        {% endif %}
       </div>
     </div>
   </div>
