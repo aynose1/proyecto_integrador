@@ -14,7 +14,8 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 @router.get("/resumen", response_model=DashboardResumen, dependencies=[Depends(require_admin)])
 def obtener_resumen(
     fecha: date | None = Query(
-        default=None, description="Fecha para 'recolectores asignados'; por defecto la fecha de hoy"
+        default=None,
+        description="Fecha del corte del dashboard (KPIs, gráficas y listas); por defecto la fecha de hoy",
     ),
     db: Session = Depends(get_db),
 ):

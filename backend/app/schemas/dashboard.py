@@ -44,6 +44,7 @@ class RecoleccionDia(BaseModel):
 class DashboardResumen(BaseModel):
     fecha: date
     total_contenedores: int
+    contenedores_sin_datos_a_fecha: int
     contenedores_llenado_alto: int
     distribucion_nivel: DistribucionNivel
     promedio_por_zona: list[PromedioZona]

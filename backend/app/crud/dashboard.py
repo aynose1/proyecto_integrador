@@ -1,10 +1,12 @@
 from datetime import date as date_type
+from datetime import datetime, time
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.catalogos import Estado
 from app.models.contenedor import Contenedor
+from app.models.registro_nivel import RegistroNivel
 from app.models.ruta import DetalleRuta, Ruta
 from app.models.usuario import Usuario
 from app.models.zona_sector import Sector, Zona
@@ -16,11 +18,41 @@ UMBRAL_ALTO = 80
 DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
 
-def _distribucion_nivel(contenedores: list[Contenedor]) -> dict:
-    total = len(contenedores)
+def _niveles_a_fecha(db: Session, fecha: date_type) -> dict[int, float]:
+    """
+    Para cada contenedor, reconstruye cuál era su nivel al final del día
+    dado: la lectura más reciente (RegistroNivel) con fecha_hora <= fin
+    de ese día. Un contenedor que todavía no tenía NINGUNA lectura hasta
+    esa fecha simplemente no aparece en el resultado — no se puede saber
+    su nivel en un momento anterior a su primera lectura.
+
+    Nota: para 'hoy' esto da exactamente lo mismo que nivel_actual,
+    porque nivel_actual siempre es la lectura más reciente que existe,
+    y no puede haber lecturas 'del futuro'.
+    """
+    cutoff = datetime.combine(fecha, time.max)
+
+    fila_mas_reciente = (
+        func.row_number()
+        .over(
+            partition_by=RegistroNivel.id_contenedor,
+            order_by=(RegistroNivel.fecha_hora.desc(), RegistroNivel.id.desc()),
+        )
+        .label("posicion")
+    )
+    subq = (
+        db.query(RegistroNivel.id_contenedor, RegistroNivel.nivel_porcentaje, fila_mas_reciente)
+        .filter(RegistroNivel.fecha_hora <= cutoff)
+        .subquery()
+    )
+    filas = db.query(subq.c.id_contenedor, subq.c.nivel_porcentaje).filter(subq.c.posicion == 1).all()
+    return {id_contenedor: float(nivel) for id_contenedor, nivel in filas}
+
+
+def _distribucion_nivel(niveles: list[float]) -> dict:
+    total = len(niveles)
     bajo = medio = alto = 0
-    for c in contenedores:
-        nivel = float(c.nivel_actual)
+    for nivel in niveles:
         if nivel >= UMBRAL_ALTO:
             alto += 1
         elif nivel >= UMBRAL_MEDIO:
@@ -41,33 +73,30 @@ def _distribucion_nivel(contenedores: list[Contenedor]) -> dict:
     }
 
 
-def _promedio_por_zona(db: Session) -> list[dict]:
-    filas = (
-        db.query(Zona.nombre, func.avg(Contenedor.nivel_actual), func.count(Contenedor.id))
-        .select_from(Zona)
-        .join(Sector, Sector.id_zona == Zona.id)
-        .join(Contenedor, Contenedor.id_sector == Sector.id)
-        .group_by(Zona.id, Zona.nombre)
-        .order_by(Zona.nombre)
-        .all()
-    )
+def _promedio_por_zona(contenedores: list[Contenedor], niveles: dict[int, float]) -> list[dict]:
+    por_zona: dict[str, list[float]] = {}
+    for c in contenedores:
+        nivel = niveles.get(c.id)
+        if nivel is None:
+            continue
+        por_zona.setdefault(c.sector.zona.nombre, []).append(nivel)
+
     return [
         {
-            "zona": nombre,
-            "promedio_nivel": round(float(promedio), 1) if promedio is not None else 0.0,
-            "total_contenedores": total,
+            "zona": zona_nombre,
+            "promedio_nivel": round(sum(valores) / len(valores), 1),
+            "total_contenedores": len(valores),
         }
-        for nombre, promedio, total in filas
+        for zona_nombre, valores in sorted(por_zona.items())
     ]
 
 
 def _recolecciones_por_dia_semana(db: Session) -> list[dict]:
     """
-    Cuenta, sobre TODO el histórico de rutas (no solo hoy — un día no
-    alcanza para mostrar un patrón semanal), cuántos contenedores se
-    marcaron 'recolectado', agrupados por el día de la semana de la
-    fecha de la ruta a la que pertenecen. No se agregó ninguna columna
-    nueva: Ruta.fecha ya alcanza para saber el día de la semana.
+    Cuenta, sobre TODO el histórico de rutas (no depende del filtro de
+    fecha del dashboard — un solo día no alcanza para mostrar un patrón
+    semanal), cuántos contenedores se marcaron 'recolectado', agrupados
+    por el día de la semana de la fecha de la ruta a la que pertenecen.
     """
     fechas = (
         db.query(Ruta.fecha)
@@ -113,42 +142,48 @@ def _recolectores_hoy(db: Session, fecha: date_type) -> list[dict]:
     return resultado
 
 
-def _contenedores_criticos(contenedores: list[Contenedor]) -> list[dict]:
-    criticos = [c for c in contenedores if float(c.nivel_actual) >= UMBRAL_ALTO]
-    criticos.sort(key=lambda c: float(c.nivel_actual), reverse=True)
-    return [
-        {
-            "id": c.id,
-            "nombre": c.nombre,
-            "codigo_contenedor": c.codigo_contenedor,
-            "nivel_actual": float(c.nivel_actual),
-            "zona": c.sector.zona.nombre,
-            "sector": c.sector.nombre,
-        }
-        for c in criticos
-    ]
+def _contenedores_criticos(contenedores: list[Contenedor], niveles: dict[int, float]) -> list[dict]:
+    criticos = []
+    for c in contenedores:
+        nivel = niveles.get(c.id)
+        if nivel is not None and nivel >= UMBRAL_ALTO:
+            criticos.append(
+                {
+                    "id": c.id,
+                    "nombre": c.nombre,
+                    "codigo_contenedor": c.codigo_contenedor,
+                    "nivel_actual": nivel,
+                    "zona": c.sector.zona.nombre,
+                    "sector": c.sector.nombre,
+                }
+            )
+    criticos.sort(key=lambda c: c["nivel_actual"], reverse=True)
+    return criticos
 
 
 def resumen(db: Session, fecha: date_type) -> dict:
     """
-    Todo lo referente a CONTENEDORES (total, distribución, promedio por
-    zona, críticos) es en tiempo real: nivel_actual siempre refleja
-    'ahora', no tiene sentido pedirlo 'a una fecha pasada'. Lo único que
-    sí depende de la fecha es la lista de recolectores con ruta
-    asignada ESE día — por defecto hoy, pero el parámetro `fecha`
-    permite consultar otro día si se necesita.
+    total_contenedores siempre es el total ACTUAL (no hay fecha de
+    registro guardada por contenedor, así que no puede variar por día).
+    Todo lo demás que depende del nivel de llenado (KPI de llenado alto,
+    distribución, promedio por zona, críticos) se reconstruye a partir
+    del historial de lecturas hasta el final del día consultado — para
+    'hoy' esto coincide exactamente con nivel_actual.
     """
-    contenedores = (
-        db.query(Contenedor).options(joinedload(Contenedor.sector).joinedload(Sector.zona)).all()
-    )
+    contenedores = db.query(Contenedor).options(joinedload(Contenedor.sector).joinedload(Sector.zona)).all()
+    niveles = _niveles_a_fecha(db, fecha)
+
+    contenedores_sin_datos = sum(1 for c in contenedores if c.id not in niveles)
+    niveles_lista = list(niveles.values())
 
     return {
         "fecha": fecha,
         "total_contenedores": len(contenedores),
-        "contenedores_llenado_alto": sum(1 for c in contenedores if float(c.nivel_actual) >= UMBRAL_ALTO),
-        "distribucion_nivel": _distribucion_nivel(contenedores),
-        "promedio_por_zona": _promedio_por_zona(db),
+        "contenedores_sin_datos_a_fecha": contenedores_sin_datos,
+        "contenedores_llenado_alto": sum(1 for n in niveles_lista if n >= UMBRAL_ALTO),
+        "distribucion_nivel": _distribucion_nivel(niveles_lista),
+        "promedio_por_zona": _promedio_por_zona(contenedores, niveles),
         "recolecciones_por_dia_semana": _recolecciones_por_dia_semana(db),
         "recolectores_hoy": _recolectores_hoy(db, fecha),
-        "contenedores_criticos": _contenedores_criticos(contenedores),
+        "contenedores_criticos": _contenedores_criticos(contenedores, niveles),
     }

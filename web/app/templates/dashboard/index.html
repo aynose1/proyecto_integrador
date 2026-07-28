@@ -5,9 +5,38 @@
 <div class="page-header">
   <div>
     <h1 class="h3 mb-1">Dashboard</h1>
-    <p class="text-muted mb-0">Vista general del sistema, con corte al día de hoy.</p>
+    <p class="text-muted mb-0">Indicadores calculados al final del día seleccionado.</p>
   </div>
 </div>
+
+<div class="card border-0 shadow-sm mt-4 mb-3">
+  <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('dashboard.index', fecha=dia_anterior) }}" title="Día anterior">
+      <i class="bi bi-chevron-left"></i>
+    </a>
+    <form method="get" action="{{ url_for('dashboard.index') }}" class="d-flex align-items-center gap-2">
+      <input type="date" name="fecha" class="form-control form-control-sm" value="{{ dia_actual.isoformat() }}" onchange="this.form.submit()">
+    </form>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('dashboard.index', fecha=dia_siguiente) }}" title="Día siguiente">
+      <i class="bi bi-chevron-right"></i>
+    </a>
+    {% if dia_actual.isoformat() != hoy %}
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('dashboard.index') }}">Hoy</a>
+    {% endif %}
+    <span class="text-muted small ms-2">Mostrando el corte del {{ dia_actual.strftime('%d/%m/%Y') }}</span>
+  </div>
+</div>
+
+{% if resumen and resumen.contenedores_sin_datos_a_fecha > 0 %}
+<div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+  <i class="bi bi-info-circle"></i>
+  <div>
+    {{ resumen.contenedores_sin_datos_a_fecha }} contenedor{{ 'es' if resumen.contenedores_sin_datos_a_fecha != 1 else '' }}
+    todavía no tenía{{ 's' if resumen.contenedores_sin_datos_a_fecha != 1 else '' }} ninguna lectura de nivel para esta fecha,
+    así que no se incluye{{ 'n' if resumen.contenedores_sin_datos_a_fecha != 1 else '' }} en las gráficas ni en los críticos de abajo.
+  </div>
+</div>
+{% endif %}
 
 {% if not resumen %}
 <div class="empty-state card border-0 shadow-sm mt-4">
@@ -42,7 +71,7 @@
   <div class="col-6 col-lg-3">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
-        <div class="text-muted small">Recolectores asignados hoy</div>
+        <div class="text-muted small">Recolectores asignados ese día</div>
         <div class="fs-2 fw-bold">{{ resumen.recolectores_hoy|length }}</div>
       </div>
     </div>
@@ -113,7 +142,7 @@
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <h2 class="h6 mb-0">Recolectores asignados hoy</h2>
+          <h2 class="h6 mb-0">Recolectores asignados</h2>
           <span class="small text-muted">{{ resumen.fecha }}</span>
         </div>
         {% if resumen.recolectores_hoy %}
