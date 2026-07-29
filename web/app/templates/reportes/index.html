@@ -4,21 +4,201 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <h1 class="h3 mb-1">Reportes</h1>
-    <p class="text-muted mb-0">Exportación a PDF y Excel disponible; contenido por definir.</p>
+    <h1 class="h3 mb-1">Reporte General de Recolección de Rutas</h1>
+    <p class="text-muted mb-0">{{ institucion }}</p>
   </div>
+  {% if contexto %}
   <div class="d-flex gap-2">
-    <a href="{{ url_for('reportes.exportar_excel') }}" class="btn btn-success"><i class="bi bi-file-earmark-spreadsheet"></i> Exportar Excel</a>
-    <a href="{{ url_for('reportes.exportar_pdf') }}" class="btn btn-danger"><i class="bi bi-file-earmark-pdf"></i> Exportar PDF</a>
+    <a href="{{ url_for('reportes.exportar_excel', **request.args) }}" class="btn btn-success"><i class="bi bi-file-earmark-spreadsheet"></i> Exportar Excel</a>
+    <a href="{{ url_for('reportes.exportar_pdf', **request.args) }}" class="btn btn-danger"><i class="bi bi-file-earmark-pdf"></i> Exportar PDF</a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-body">
+    <form method="get" action="{{ url_for('reportes.index') }}" class="row g-3 align-items-end">
+      <div class="col-6 col-md-2">
+        <label class="form-label" for="fecha_desde">Desde</label>
+        <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" value="{{ contexto.fecha_desde.isoformat() if contexto else '' }}">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label" for="fecha_hasta">Hasta</label>
+        <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta" value="{{ contexto.fecha_hasta.isoformat() if contexto else '' }}">
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label" for="id_sector">Sector</label>
+        <select class="form-select" id="id_sector" name="id_sector">
+          <option value="">Todos</option>
+          {% if contexto %}
+          {% for s in contexto.sectores %}
+          <option value="{{ s.id }}" {% if contexto.id_sector == s.id %}selected{% endif %}>{{ s.zona.nombre }} / {{ s.nombre }}</option>
+          {% endfor %}
+          {% endif %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label" for="id_recolector">Recolector</label>
+        <select class="form-select" id="id_recolector" name="id_recolector">
+          <option value="">Todos</option>
+          {% if contexto %}
+          {% for u in contexto.recolectores %}
+          <option value="{{ u.id }}" {% if contexto.id_recolector == u.id %}selected{% endif %}>{{ u.nombre }} {{ u.apellido_paterno }}</option>
+          {% endfor %}
+          {% endif %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label" for="estado">Estado</label>
+        <select class="form-select" id="estado" name="estado">
+          <option value="">Todos</option>
+          {% for valor, etiqueta in estados_ruta.items() %}
+          <option value="{{ valor }}" {% if contexto and contexto.estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Aplicar filtros</button>
+        <a href="{{ url_for('reportes.index') }}" class="btn btn-outline-secondary">Limpiar</a>
+      </div>
+    </form>
   </div>
 </div>
 
+{% if not contexto %}
 <div class="empty-state card border-0 shadow-sm mt-4">
   <div class="card-body text-center py-5">
-    <i class="bi bi-file-text display-4 text-muted"></i>
-    <h2 class="h5 mt-3">Módulo en construcción</h2>
-    <p class="text-muted mb-0">Cuando definas qué reportes necesitas (incidencias, recolecciones, niveles, etc.), los agregamos aquí.</p>
-    <p class="text-muted small mt-2 mb-0">Los botones de exportación generan un archivo placeholder de ejemplo.</p>
+    <i class="bi bi-exclamation-triangle display-4 text-muted"></i>
+    <h2 class="h5 mt-3">No se pudo generar el reporte</h2>
+    <p class="text-muted mb-0">Revisa que la API esté disponible e intenta de nuevo.</p>
   </div>
 </div>
+{% else %}
+
+<p class="text-muted small mt-3 mb-0">
+  Periodo consultado: {{ contexto.fecha_desde.strftime('%d/%m/%Y') }} — {{ contexto.fecha_hasta.strftime('%d/%m/%Y') }}
+  · Generado: {{ contexto.generado_en.strftime('%d/%m/%Y %H:%M') }}
+</p>
+
+<div class="row g-3 mt-1">
+  <div class="col-6 col-lg">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Rutas programadas</div>
+        <div class="fs-2 fw-bold">{{ contexto.resumen.total_rutas }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Rutas completadas</div>
+        <div class="fs-2 fw-bold">{{ contexto.resumen.rutas_completadas }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Contenedores asignados</div>
+        <div class="fs-2 fw-bold">{{ contexto.resumen.contenedores_asignados }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Contenedores recolectados</div>
+        <div class="fs-2 fw-bold">{{ contexto.resumen.contenedores_recolectados }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Cumplimiento</div>
+        <div class="fs-2 fw-bold">{{ contexto.resumen.porcentaje_cumplimiento }}%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mt-3">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Ruta</th>
+          <th>Fecha</th>
+          <th>Recolector</th>
+          <th>Sector</th>
+          <th>Asignados</th>
+          <th>Recolectados</th>
+          <th>Inicio</th>
+          <th>Fin</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in contexto.filas %}
+        <tr>
+          <td>{{ fila.ruta }}</td>
+          <td>{{ fila.fecha.strftime('%d/%m/%Y') }}</td>
+          <td>{{ fila.recolector }}</td>
+          <td>{{ fila.sector }}</td>
+          <td>{{ fila.asignados }}</td>
+          <td>{{ fila.recolectados }}</td>
+          <td>{{ fila.hora_inicio or '—' }}</td>
+          <td>{{ fila.hora_fin or '—' }}</td>
+          <td>
+            <span class="badge {% if fila.estado == 'Completada' %}bg-success{% elif fila.estado == 'En proceso' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+              {{ fila.estado }}
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="text-center text-muted py-4">Sin rutas para los filtros seleccionados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row g-3 mt-1 mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h2 class="h6">Resumen final</h2>
+        <ul class="mb-0">
+          <li>
+            Tiempo promedio por ruta:
+            {% if contexto.resumen_final.tiempo_promedio_minutos is not none %}
+              {{ contexto.resumen_final.tiempo_promedio_minutos }} min
+            {% else %}
+              No disponible (faltan horas de inicio/fin capturadas)
+            {% endif %}
+          </li>
+          <li>
+            Ruta con mayor número de contenedores:
+            {% if contexto.resumen_final.ruta_mayor %}
+              {{ contexto.resumen_final.ruta_mayor }} ({{ contexto.resumen_final.ruta_mayor_cantidad }})
+            {% else %}
+              N/D
+            {% endif %}
+          </li>
+          <li>
+            Ruta con menor número de contenedores:
+            {% if contexto.resumen_final.ruta_menor %}
+              {{ contexto.resumen_final.ruta_menor }} ({{ contexto.resumen_final.ruta_menor_cantidad }})
+            {% else %}
+              N/D
+            {% endif %}
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endif %}
 {% endblock %}
