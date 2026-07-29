@@ -228,6 +228,14 @@ def _resumen_final(rutas):
     }
 
 
+def _col_widths(ancho_disponible, pesos):
+    """Reparte ancho_disponible entre columnas según pesos relativos, para
+    que la tabla ocupe todo el ancho útil de la página en vez de quedar
+    encogida al tamaño de su contenido."""
+    total_pesos = sum(pesos)
+    return [ancho_disponible * peso / total_pesos for peso in pesos]
+
+
 def _contexto_reporte():
     fecha_desde, fecha_hasta, id_sector, id_recolector, estado = _obtener_filtros()
     recolectores, sectores, contenedores_por_id, usuarios_por_id = _cargar_datos_base()
@@ -371,7 +379,9 @@ def exportar_pdf():
         buffer, pagesize=landscape(letter),
         title="Reporte General de Recolección de Rutas",
         topMargin=0.6 * inch, bottomMargin=0.6 * inch,
+        leftMargin=0.5 * inch, rightMargin=0.5 * inch,
     )
+    ancho_disponible = doc.width  # ancho de página menos leftMargin/rightMargin
     styles = getSampleStyleSheet()
     elementos = []
 
@@ -394,7 +404,7 @@ def exportar_pdf():
         ["Total de contenedores recolectados", str(r["contenedores_recolectados"])],
         ["Porcentaje de cumplimiento", f"{r['porcentaje_cumplimiento']}%"],
     ]
-    tabla_resumen = Table(resumen_data, colWidths=[3 * inch, 2 * inch])
+    tabla_resumen = Table(resumen_data, colWidths=_col_widths(ancho_disponible, [3, 1]))
     tabla_resumen.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.whitesmoke),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
@@ -416,7 +426,8 @@ def exportar_pdf():
     if len(filas_tabla) == 1:
         filas_tabla.append(["Sin rutas para los filtros seleccionados"] + [""] * 8)
 
-    tabla_detalle = Table(filas_tabla, repeatRows=1)
+    pesos_detalle = [16, 9, 15, 16, 9, 10, 9, 9, 10]  # Ruta, Fecha, Recolector, Sector, Asig., Recol., H.ini, H.fin, Estado
+    tabla_detalle = Table(filas_tabla, colWidths=_col_widths(ancho_disponible, pesos_detalle), repeatRows=1)
     tabla_detalle.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2e7d32")),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
@@ -443,7 +454,7 @@ def exportar_pdf():
             f"{rf['ruta_menor']} ({rf['ruta_menor_cantidad']})" if rf["ruta_menor"] else "N/D",
         ],
     ]
-    tabla_final = Table(resumen_final_data, colWidths=[3.5 * inch, 3.5 * inch])
+    tabla_final = Table(resumen_final_data, colWidths=_col_widths(ancho_disponible, [3, 2]))
     tabla_final.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
         ("FONTSIZE", (0, 0), (-1, -1), 9),
