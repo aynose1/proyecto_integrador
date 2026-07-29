@@ -24,14 +24,23 @@ def listar_mis_rutas(
     return crud.ruta.get_multi_por_usuario(db, current_user.id, skip=skip, limit=limit, fecha=fecha)
 
 
-@router.get("", response_model=list[RutaSummary], dependencies=[Depends(require_admin)])
+@router.get("", response_model=list[RutaRead], dependencies=[Depends(require_admin)])
 def listar_rutas(
     fecha: date | None = Query(default=None, description="Filtra por fecha exacta (YYYY-MM-DD); si se omite, regresa de todas las fechas"),
+    fecha_desde: date | None = Query(default=None, description="Filtra rutas con fecha >= este valor (YYYY-MM-DD)"),
+    fecha_hasta: date | None = Query(default=None, description="Filtra rutas con fecha <= este valor (YYYY-MM-DD)"),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
 ) -> list:
-    return crud.ruta.get_multi(db, skip=skip, limit=limit, fecha=fecha)
+    """
+    Devuelve el detalle completo (detalles/contenedores/estado) de cada
+    ruta, no solo el resumen: la vista de Reportes lo necesita en una
+    sola llamada, en vez de pedir /rutas/{id} por cada ruta (N+1). No
+    tiene costo extra en la consulta: get_multi ya cargaba los detalles
+    (selectinload) aunque antes se descartaran al serializar.
+    """
+    return crud.ruta.get_multi(db, skip=skip, limit=limit, fecha=fecha, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
 
 
 @router.get("/{ruta_id}", response_model=RutaRead)

@@ -84,18 +84,20 @@ def _cargar_datos_base():
 
 def _rutas_en_rango(fecha_desde: date, fecha_hasta: date) -> list[dict]:
     """
-    GET /rutas solo filtra por fecha EXACTA (no por rango), así que se
-    recorre día por día. Por cada resumen se pide el detalle completo
-    (GET /rutas/{id}), igual que ya hace rutas.listar hoy.
+    Una sola llamada: GET /rutas ahora acepta fecha_desde/fecha_hasta y
+    devuelve el detalle completo de cada ruta (ver backend). Antes esto
+    recorría día por día y pedía /rutas/{id} por cada ruta encontrada
+    (N+1) — con 30 días de rango eso eran fácilmente decenas de
+    solicitudes secuenciales.
     """
-    rutas = []
-    dia = fecha_desde
-    while dia <= fecha_hasta:
-        resumenes = api_request("get", "/rutas", params={"fecha": dia.isoformat()})
-        for resumen in resumenes:
-            rutas.append(api_request("get", f"/rutas/{resumen['id']}"))
-        dia += timedelta(days=1)
-    return rutas
+    return api_request(
+        "get", "/rutas",
+        params={
+            "fecha_desde": fecha_desde.isoformat(),
+            "fecha_hasta": fecha_hasta.isoformat(),
+            "limit": 1000,
+        },
+    )
 
 
 def _filtrar_rutas(rutas, id_recolector, estado, id_sector, contenedores_por_id):

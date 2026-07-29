@@ -41,11 +41,21 @@ class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
         return self._query_con_detalles(db).filter(Ruta.id == id).first()
 
     def get_multi(
-        self, db: Session, skip: int = 0, limit: int = 100, fecha: date | None = None
+        self,
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+        fecha: date | None = None,
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
     ) -> list[Ruta]:
         query = self._query_con_detalles(db)
         if fecha is not None:
             query = query.filter(Ruta.fecha == fecha)
+        if fecha_desde is not None:
+            query = query.filter(Ruta.fecha >= fecha_desde)
+        if fecha_hasta is not None:
+            query = query.filter(Ruta.fecha <= fecha_hasta)
         return query.order_by(Ruta.fecha.desc(), Ruta.id.desc()).offset(skip).limit(limit).all()
 
     def create(self, db: Session, obj_in: RutaCreate) -> Ruta:
