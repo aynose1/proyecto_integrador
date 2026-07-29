@@ -1,39 +1,188 @@
+/* ============================================================
+   Echo-Bin · Sistema de gestión de recolección de residuos
+   Tokens de diseño: paleta verde-aqua profesional.
+   ============================================================ */
+
 :root {
-  --brand-green: #2e7d32;
-  --brand-green-dark: #1b5e20;
-  --brand-green-soft: #e8f5e9;
-  --page-bg: #f4f6f9;
+  /* Marca: verde profundo -> aqua, con acento cian vivo para foco/enlaces */
+  --brand-teal-950: #07211e;
+  --brand-teal-900: #0b3b38;
+  --brand-teal-800: #0e4d47;
+  --brand-teal-700: #127a6c;   /* primario: botones, estados activos */
+  --brand-teal-600: #18917f;
+  --brand-aqua-500: #17b8a6;   /* acento vivo: focos, enlaces, iconos */
+  --brand-aqua-300: #74e0d1;
+  --brand-aqua-100: #e3f8f5;   /* fondos suaves, encabezados de tabla, badges */
+
+  --ink-900: #13221f;          /* texto principal (no negro puro) */
+  --ink-600: #4c6360;
+  --ink-400: #7d928e;
+
+  --page-bg: #f1f8f7;          /* fondo general, tinte aqua muy sutil */
+  --surface: #ffffff;
+  --border-soft: rgba(11, 59, 56, 0.12);
+  --shadow-card: 0 1px 2px rgba(11, 59, 56, 0.05), 0 10px 24px -14px rgba(11, 59, 56, 0.35);
+
+  /* Compatibilidad: nombres que ya usaban las plantillas existentes */
+  --brand-green: var(--brand-teal-700);
+  --brand-green-dark: var(--brand-teal-900);
+  --brand-green-soft: var(--brand-aqua-100);
+  --page-bg-legacy: var(--page-bg);
+
+  --bs-link-color-rgb: 18, 122, 108;
+  --bs-focus-ring-color: rgba(23, 184, 166, 0.25);
 }
 
+/* ---------- Base y tipografía ---------- */
 body {
   background-color: var(--page-bg);
+  color: var(--ink-900);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 0.95rem;
 }
 
-/* Bootstrap primary override — verde reciclaje */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: "Manrope", "Inter", sans-serif;
+  font-weight: 700;
+  color: var(--ink-900);
+  letter-spacing: -0.01em;
+}
+
+.text-muted {
+  color: var(--ink-400) !important;
+}
+
+a {
+  color: var(--brand-teal-700);
+}
+a:hover {
+  color: var(--brand-teal-900);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-aqua-500);
+  outline-offset: 2px;
+}
+
+/* ---------- Botones ---------- */
+.btn {
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
 .btn-primary {
-  --bs-btn-bg: var(--brand-green);
-  --bs-btn-border-color: var(--brand-green);
-  --bs-btn-hover-bg: var(--brand-green-dark);
-  --bs-btn-hover-border-color: var(--brand-green-dark);
-  --bs-btn-active-bg: var(--brand-green-dark);
-  --bs-btn-active-border-color: var(--brand-green-dark);
-  --bs-btn-disabled-bg: var(--brand-green);
-  --bs-btn-disabled-border-color: var(--brand-green);
+  --bs-btn-bg: var(--brand-teal-700);
+  --bs-btn-border-color: var(--brand-teal-700);
+  --bs-btn-hover-bg: var(--brand-teal-900);
+  --bs-btn-hover-border-color: var(--brand-teal-900);
+  --bs-btn-active-bg: var(--brand-teal-900);
+  --bs-btn-active-border-color: var(--brand-teal-900);
+  --bs-btn-disabled-bg: var(--brand-teal-700);
+  --bs-btn-disabled-border-color: var(--brand-teal-700);
+  box-shadow: 0 3px 10px -3px rgba(18, 122, 108, 0.55);
 }
 
 .btn-outline-primary {
-  --bs-btn-color: var(--brand-green);
-  --bs-btn-border-color: var(--brand-green);
-  --bs-btn-hover-bg: var(--brand-green);
-  --bs-btn-hover-border-color: var(--brand-green);
-  --bs-btn-active-bg: var(--brand-green-dark);
-  --bs-btn-active-border-color: var(--brand-green-dark);
-  --bs-btn-disabled-color: var(--brand-green);
-  --bs-btn-disabled-border-color: var(--brand-green);
+  --bs-btn-color: var(--brand-teal-700);
+  --bs-btn-border-color: var(--brand-teal-700);
+  --bs-btn-hover-bg: var(--brand-teal-700);
+  --bs-btn-hover-border-color: var(--brand-teal-700);
+  --bs-btn-active-bg: var(--brand-teal-900);
+  --bs-btn-active-border-color: var(--brand-teal-900);
+  --bs-btn-disabled-color: var(--brand-teal-700);
+  --bs-btn-disabled-border-color: var(--brand-teal-700);
+}
+
+.btn-success {
+  --bs-btn-bg: var(--brand-aqua-500);
+  --bs-btn-border-color: var(--brand-aqua-500);
+  --bs-btn-hover-bg: #12a08f;
+  --bs-btn-hover-border-color: #12a08f;
+  --bs-btn-active-bg: #0d8879;
+  --bs-btn-active-border-color: #0d8879;
+}
+
+.btn-outline-success {
+  --bs-btn-color: var(--brand-aqua-500);
+  --bs-btn-border-color: var(--brand-aqua-500);
+  --bs-btn-hover-bg: var(--brand-aqua-500);
+  --bs-btn-hover-border-color: var(--brand-aqua-500);
+}
+
+.btn-danger {
+  --bs-btn-bg: #bf4a40;
+  --bs-btn-border-color: #bf4a40;
+  --bs-btn-hover-bg: #a13c33;
+  --bs-btn-hover-border-color: #a13c33;
+  --bs-btn-active-bg: #8a342c;
+  --bs-btn-active-border-color: #8a342c;
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--ink-600);
+  --bs-btn-border-color: var(--border-soft);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--ink-900);
+  --bs-btn-hover-border-color: var(--ink-900);
 }
 
 .text-primary {
-  color: var(--brand-green) !important;
+  color: var(--brand-teal-700) !important;
+}
+
+/* ---------- Formularios ---------- */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--brand-aqua-500);
+  box-shadow: 0 0 0 0.2rem var(--bs-focus-ring-color);
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--ink-600);
+}
+
+/* ---------- Tarjetas ---------- */
+.card {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+}
+
+.shadow-sm,
+.card.shadow-sm {
+  box-shadow: var(--shadow-card) !important;
+}
+
+/* ---------- Tablas ---------- */
+.table-light,
+thead.table-light th,
+.table > :not(caption) > * > .table-light {
+  --bs-table-bg: var(--brand-aqua-100);
+  --bs-table-color: var(--brand-teal-900);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+  font-weight: 700;
+}
+
+.table-hover > tbody > tr:hover > * {
+  --bs-table-accent-bg: var(--brand-aqua-100);
+}
+
+/* ---------- Badges ---------- */
+/* Se retonan los colores de estado de Bootstrap a la paleta de marca,
+   sin tocar las plantillas que ya usan bg-success/bg-warning/etc. */
+.badge.bg-success { background-color: var(--brand-aqua-500) !important; }
+.badge.bg-warning { background-color: #dfa524 !important; color: #3a2a03 !important; }
+.badge.bg-secondary { background-color: var(--ink-400) !important; }
+.badge.bg-danger { background-color: #bf4a40 !important; }
+
+.badge-brand {
+  background-color: var(--brand-aqua-100);
+  color: var(--brand-teal-900);
 }
 
 /* ================= Sidebar izquierdo ================= */
@@ -43,9 +192,9 @@ body {
 }
 
 .sidebar {
-  width: 240px;
+  width: 250px;
   flex-shrink: 0;
-  background-color: var(--brand-green-dark);
+  background: linear-gradient(185deg, var(--brand-teal-900) 0%, var(--brand-teal-950) 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -63,12 +212,13 @@ body {
   justify-content: space-between;
   gap: 0.5rem;
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   min-height: 64px;
 }
 
 .sidebar__brand-name {
-  font-weight: 600;
+  font-family: "Manrope", sans-serif;
+  font-weight: 700;
   color: #fff;
   line-height: 1.1;
 }
@@ -83,7 +233,7 @@ body {
 .sidebar__nav {
   flex: 1;
   overflow-y: auto;
-  padding: 0.75rem 0.6rem;
+  padding: 0.85rem 0.65rem;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -95,10 +245,11 @@ body {
   gap: 0.65rem;
   padding: 0.6rem 0.75rem;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
   font-size: 0.92rem;
   border-left: 3px solid transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .sidebar__link:hover {
@@ -107,10 +258,10 @@ body {
 }
 
 .sidebar__link.active {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(23, 184, 166, 0.18);
   color: #fff;
   font-weight: 600;
-  border-left-color: var(--brand-green-soft);
+  border-left-color: var(--brand-aqua-500);
 }
 
 .sidebar__link i {
@@ -121,14 +272,14 @@ body {
 
 .sidebar__footer {
   padding: 0.85rem 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.75);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .app-content {
   flex: 1;
   min-width: 0;
-  margin-left: 240px;
+  margin-left: 250px;
 }
 
 .topbar {
@@ -136,8 +287,8 @@ body {
   align-items: center;
   gap: 0.75rem;
   padding: 0.65rem 1rem;
-  background-color: #fff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
   position: sticky;
   top: 0;
   z-index: 1020;
@@ -147,7 +298,7 @@ body {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(7, 33, 30, 0.45);
   z-index: 1030;
 }
 
@@ -167,6 +318,7 @@ body {
   }
 }
 
+/* ---------- Pantallas de acceso (login/registro) ---------- */
 .auth-wrapper {
   min-height: 100vh;
   display: flex;
@@ -175,6 +327,10 @@ body {
   justify-content: center;
   padding: 1.5rem;
   gap: 0.75rem;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(23, 184, 166, 0.12), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(11, 59, 56, 0.10), transparent 45%),
+    var(--page-bg);
 }
 
 .auth-stack {
@@ -193,22 +349,32 @@ body {
 .auth-card {
   width: 100%;
   border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+}
+
+.auth-card::before {
+  content: "";
+  display: block;
+  height: 5px;
+  background: linear-gradient(90deg, var(--brand-teal-700), var(--brand-aqua-500));
 }
 
 .auth-card .auth-brand {
-  color: var(--brand-green);
+  color: var(--brand-teal-700);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 .auth-link {
-  color: var(--brand-green);
+  color: var(--brand-teal-700);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .auth-link:hover {
-  color: var(--brand-green-dark);
+  color: var(--brand-teal-900);
   text-decoration: underline;
 }
 
@@ -227,27 +393,22 @@ body {
 .contenedor-checklist {
   max-height: 280px;
   overflow-y: auto;
-  background: #fafbfc;
+  background: var(--page-bg);
 }
 
 .nav-tabs .nav-link {
-  color: #495057;
+  color: var(--ink-600);
 }
 
 .nav-tabs .nav-link.active {
-  color: var(--brand-green);
+  color: var(--brand-teal-700);
   font-weight: 600;
-  border-bottom-color: var(--brand-green);
+  border-bottom-color: var(--brand-teal-700);
 }
 
 .empty-state .card-body {
   max-width: 560px;
   margin: 0 auto;
-}
-
-.badge-brand {
-  background-color: var(--brand-green-soft);
-  color: var(--brand-green-dark);
 }
 
 @media (max-width: 576px) {
@@ -256,17 +417,19 @@ body {
   }
 }
 
+/* Placeholder del logo en la barra lateral: sustitúyelo por
+   <img src="{{ url_for('static', filename='img/logo.png') }}" ...>
+   cuando tengas el archivo definitivo (web/app/static/img/logo.png). */
 .logo-placeholder {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 1.5px dashed rgba(255, 255, 255, 0.55);
-  border-radius: 6px;
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  color: rgba(255, 255, 255, 0.75);
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, var(--brand-aqua-500), var(--brand-teal-700));
+  border-radius: 9px;
+  font-size: 1.05rem;
+  color: #fff;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px -1px rgba(7, 33, 30, 0.5);
 }
