@@ -169,12 +169,26 @@ def resumen(db: Session, fecha: date_type) -> dict:
     distribución, promedio por zona, críticos) se reconstruye a partir
     del historial de lecturas hasta el final del día consultado — para
     'hoy' esto coincide exactamente con nivel_actual.
+
+    Solo se consideran contenedores en estado 'activo': uno inactivo no
+    está en operación, así que no debería contar en ningún KPI ni
+    gráfica del dashboard (llenado alto, distribución, promedio por
+    zona, críticos, ni en el total).
     """
-    contenedores = db.query(Contenedor).options(joinedload(Contenedor.sector).joinedload(Sector.zona)).all()
+    contenedores = (
+        db.query(Contenedor)
+        .join(Estado, Contenedor.id_estado == Estado.id)
+        .filter(Estado.estado == "activo")
+        .options(joinedload(Contenedor.sector).joinedload(Sector.zona))
+        .all()
+    )
     niveles = _niveles_a_fecha(db, fecha)
 
     contenedores_sin_datos = sum(1 for c in contenedores if c.id not in niveles)
-    niveles_lista = list(niveles.values())
+    # niveles trae lecturas de TODOS los contenedores (la consulta a
+    # RegistroNivel no sabe de estados); hay que quedarnos solo con las
+    # de los contenedores activos que ya filtramos arriba.
+    niveles_lista = [niveles[c.id] for c in contenedores if c.id in niveles]
 
     return {
         "fecha": fecha,
