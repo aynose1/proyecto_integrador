@@ -1,5 +1,5 @@
 from datetime import date as date_type
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload, selectinload
@@ -91,23 +91,27 @@ def _promedio_por_zona(contenedores: list[Contenedor], niveles: dict[int, float]
     ]
 
 
-def _recolecciones_por_dia_semana(db: Session) -> list[dict]:
+def _recolecciones_por_dia_semana(db: Session, fecha: date_type) -> list[dict]:
     """
-    Cuenta, sobre TODO el histórico de rutas (no depende del filtro de
-    fecha del dashboard — un solo día no alcanza para mostrar un patrón
-    semanal), cuántos contenedores se marcaron 'recolectado', agrupados
-    por el día de la semana de la fecha de la ruta a la que pertenecen.
+    Cuenta cuántos contenedores se marcaron 'recolectado', agrupados por
+    día de la semana, SOLO dentro de la semana actual (lunes a domingo
+    que contiene 'fecha' — por defecto hoy). Antes esto usaba TODO el
+    histórico de rutas; ahora se acota a la semana en curso.
     """
+    inicio_semana = fecha - timedelta(days=fecha.weekday())
+    fin_semana = inicio_semana + timedelta(days=6)
+
     fechas = (
         db.query(Ruta.fecha)
         .join(DetalleRuta, DetalleRuta.id_ruta == Ruta.id)
         .join(Estado, DetalleRuta.id_estado == Estado.id)
         .filter(Estado.estado == "recolectado")
+        .filter(Ruta.fecha >= inicio_semana, Ruta.fecha <= fin_semana)
         .all()
     )
     conteo = {dia: 0 for dia in DIAS_SEMANA}
-    for (fecha,) in fechas:
-        conteo[DIAS_SEMANA[fecha.weekday()]] += 1
+    for (fecha_ruta,) in fechas:
+        conteo[DIAS_SEMANA[fecha_ruta.weekday()]] += 1
     return [{"dia": dia, "total": conteo[dia]} for dia in DIAS_SEMANA]
 
 
@@ -197,7 +201,7 @@ def resumen(db: Session, fecha: date_type) -> dict:
         "contenedores_llenado_alto": sum(1 for n in niveles_lista if n >= UMBRAL_ALTO),
         "distribucion_nivel": _distribucion_nivel(niveles_lista),
         "promedio_por_zona": _promedio_por_zona(contenedores, niveles),
-        "recolecciones_por_dia_semana": _recolecciones_por_dia_semana(db),
+        "recolecciones_por_dia_semana": _recolecciones_por_dia_semana(db, fecha),
         "recolectores_hoy": _recolectores_hoy(db, fecha),
         "contenedores_criticos": _contenedores_criticos(contenedores, niveles),
     }
