@@ -59,6 +59,27 @@
 
     <div class="sidebar-backdrop d-lg-none" id="sidebarBackdrop"></div>
 
+    {# Modal compartido de confirmación de eliminación. Cualquier botón con
+       data-confirm-delete="<id-del-form>" lo dispara en vez de usar
+       confirm() del navegador; ver script al final del archivo. #}
+    <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title fs-5">Confirmar eliminación</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-0">¿Eliminar <strong id="confirmarEliminarNombre"></strong>? Esta acción no se puede deshacer.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger" id="confirmarEliminarBoton">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="app-content">
       <header class="topbar d-lg-none">
         <button class="btn btn-sm btn-outline-secondary" type="button" id="sidebarToggle" aria-label="Abrir menú">
@@ -68,16 +89,6 @@
       </header>
 
       <main class="container-fluid py-4 px-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
         {% block content %}{% endblock %}
       </main>
     </div>
@@ -111,6 +122,21 @@
     openBtn?.addEventListener('click', openSidebar);
     closeBtn?.addEventListener('click', closeSidebar);
     backdrop?.addEventListener('click', closeSidebar);
+
+    // Modal compartido de confirmación de eliminación (ver #modalConfirmarEliminar arriba).
+    document.addEventListener('click', function (ev) {
+      const trigger = ev.target.closest('[data-confirm-delete]');
+      if (!trigger) return;
+      const formId = trigger.getAttribute('data-confirm-delete');
+      const form = document.getElementById(formId);
+      const modalEl = document.getElementById('modalConfirmarEliminar');
+      if (!form || !modalEl) return;
+
+      modalEl.querySelector('#confirmarEliminarNombre').textContent = trigger.getAttribute('data-confirm-nombre') || 'este elemento';
+      const confirmBtn = modalEl.querySelector('#confirmarEliminarBoton');
+      confirmBtn.onclick = function () { form.submit(); };
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    });
   </script>
   {% block scripts %}{% endblock %}
 </body>
