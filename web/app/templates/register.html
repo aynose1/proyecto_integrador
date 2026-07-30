@@ -2,9 +2,13 @@
 {% block title %}Registro — {{ app_name }}{% endblock %}
 
 {% block auth_content %}
+<div class="auth-header text-center">
+  <span class="logo-placeholder logo-placeholder--lg" aria-hidden="true"><i class="bi bi-recycle"></i></span>
+  <div class="auth-header__name">{{ app_name }}</div>
+  <div class="auth-header__tagline">Sistema de gestión de recolección de residuos</div>
+</div>
 <div class="auth-card card shadow">
   <div class="card-body p-4">
-    <p class="auth-brand mb-1"><i class="bi bi-recycle"></i> {{ app_name }}</p>
     <h1 class="h4 mb-1">Registro de administrador</h1>
     <p class="text-muted mb-4">Crea tu cuenta para gestionar el sistema.</p>
 

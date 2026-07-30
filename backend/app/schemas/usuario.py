@@ -11,11 +11,6 @@ class UsuarioBase(BaseModel):
 
 
 class UsuarioCreate(UsuarioBase):
-    """
-    Usado por el administrador autenticado para crear otros administradores
-    o recolectores (POST /usuarios). Para auto-registro de admin desde la
-    web, usar AdminRegisterRequest + POST /auth/register.
-    """
     contrasena: str = Field(min_length=8)
     id_tipo_usuario: int
 
@@ -32,11 +27,9 @@ class UsuarioRead(UsuarioBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     tipo_usuario: TipoUsuarioRead
-    # Nunca se expone contrasena_hash
 
 
 class AdminRegisterRequest(BaseModel):
-    """Auto-registro de administrador desde la plataforma web."""
     codigo_usuario: str = Field(max_length=20)
     nombre: str = Field(max_length=100)
     apellido_paterno: str = Field(max_length=100)

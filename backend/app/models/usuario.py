@@ -5,13 +5,6 @@ from app.db.base_class import Base
 
 
 class Usuario(Base):
-    """
-    Administradores y recolectores viven en la misma tabla, diferenciados
-    por id_tipo_usuario.
-    - Un administrador puede auto-registrarse desde la web (POST /auth/register).
-    - Los recolectores los crea un administrador autenticado (POST /usuarios).
-    - El seeder deja un admin inicial (ADMIN001) para el primer acceso.
-    """
     __tablename__ = "usuarios"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

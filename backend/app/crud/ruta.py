@@ -84,10 +84,27 @@ class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
 
         if obj_in.ids_contenedores is not None:
             # Reemplaza el detalle completo de contenedores de la ruta.
-            db.query(DetalleRuta).filter(DetalleRuta.id_ruta == db_obj.id).delete()
+            #
+            # IMPORTANTE: se vacía la COLECCIÓN (db_obj.detalles.clear()),
+            # no se borra cada DetalleRuta con db.delete(). La relación
+            # tiene cascade="all, delete-orphan": quitar los objetos de
+            # la colección ya es suficiente para que SQLAlchemy programe
+            # su DELETE al hacer flush/commit.
+            #
+            # Si en cambio se borran uno por uno con db.delete() mientras
+            # siguen referenciados en db_obj.detalles, esa colección se
+            # queda con instancias ya borradas, y el siguiente
+            # db.add(db_obj) revienta con
+            # "Instance <DetalleRuta> has been deleted" (InvalidRequestError)
+            # — que es exactamente el bug reportado.
+            db_obj.detalles.clear()
+            db.flush()
+
             estado_pendiente_id = _estado_pendiente_id(db)
             for orden, id_contenedor in enumerate(obj_in.ids_contenedores, start=1):
-                db.add(DetalleRuta(id_ruta=db_obj.id, id_contenedor=id_contenedor, id_estado=estado_pendiente_id, orden=orden))
+                db_obj.detalles.append(
+                    DetalleRuta(id_contenedor=id_contenedor, id_estado=estado_pendiente_id, orden=orden)
+                )
 
         db.add(db_obj)
         db.commit()
