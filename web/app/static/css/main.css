@@ -433,3 +433,49 @@ thead.table-light th,
   flex-shrink: 0;
   box-shadow: 0 2px 6px -1px rgba(7, 33, 30, 0.5);
 }
+
+.logo-placeholder--lg {
+  width: 56px;
+  height: 56px;
+  font-size: 1.7rem;
+  border-radius: 14px;
+}
+
+/* ---------- Encabezado de marca en login/registro ---------- */
+.auth-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.auth-header__logo {
+  height: 56px;
+  width: auto;
+  margin-bottom: 0.5rem;
+}
+
+.auth-header__name {
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  font-size: 1.35rem;
+  color: var(--brand-teal-900);
+}
+
+.auth-header__tagline {
+  font-size: 0.85rem;
+  color: var(--ink-400);
+}
+
+/* ---------- Icono de identidad en el encabezado de cada módulo ---------- */
+.page-header__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--brand-aqua-100);
+  color: var(--brand-teal-700);
+  font-size: 1.3rem;
+}
