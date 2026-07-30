@@ -3,9 +3,12 @@
 
 {% block content %}
 <div class="page-header">
-  <div>
-    <h1 class="h3 mb-1">Rutas de recolección</h1>
-    <p class="text-muted mb-0">Cada ruta puede incluir varios contenedores en orden.</p>
+  <div class="page-header__card">
+    <span class="page-header__icon"><i class="bi bi-signpost-split"></i></span>
+    <div>
+      <h1 class="h3 mb-1">Rutas de recolección</h1>
+      <p class="text-muted mb-0">Cada ruta puede incluir varios contenedores en orden.</p>
+    </div>
   </div>
   <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRutaNueva">
     <i class="bi bi-plus-lg"></i> Nueva ruta
@@ -79,9 +82,8 @@
           <td class="text-end">
             <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalRutaVer{{ r.id }}">Ver</button>
             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalRutaEditar{{ r.id }}">Editar</button>
-            <form method="post" action="{{ url_for('rutas.eliminar', ruta_id=r.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar esta ruta?')">
-              <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-            </form>
+            <form method="post" action="{{ url_for('rutas.eliminar', ruta_id=r.id) }}" class="d-none" id="form-eliminar-ruta-{{ r.id }}"></form>
+            <button type="button" class="btn btn-sm btn-outline-danger" data-confirm-delete="form-eliminar-ruta-{{ r.id }}" data-confirm-nombre="la ruta &quot;{{ r.nombre }}&quot;">Eliminar</button>
           </td>
         </tr>
         {% else %}
@@ -95,7 +97,7 @@
 {# Modal crear #}
 <div class="modal fade" id="modalRutaNueva" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
-    <form method="post" action="{{ url_for('rutas.crear') }}" class="modal-content">
+    <form method="post" action="{{ url_for('rutas.crear') }}" class="modal-content" id="formRutaNueva">
       <div class="modal-header">
         <h2 class="modal-title fs-5">Nueva ruta</h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -225,7 +227,7 @@
 {# Modal editar #}
 <div class="modal fade" id="modalRutaEditar{{ r.id }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
-    <form method="post" action="{{ url_for('rutas.editar', ruta_id=r.id) }}" class="modal-content">
+    <form method="post" action="{{ url_for('rutas.editar', ruta_id=r.id) }}" class="modal-content" id="formRutaEditar{{ r.id }}">
       <div class="modal-header">
         <h2 class="modal-title fs-5">Editar ruta</h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -305,6 +307,36 @@
 {% endfor %}
 
 <script>
+// VALIDACIÓN DE HORARIO: hora fin no puede ser anterior (ni igual) a hora inicio
+function validarHorarioRuta(form) {
+  const hi = form.querySelector('input[name="hora_inicio"]');
+  const hf = form.querySelector('input[name="hora_fin"]');
+  if (!hi || !hf) return true;
+
+  hf.setCustomValidity('');
+  if (hi.value && hf.value && hf.value <= hi.value) {
+    hf.setCustomValidity('La hora de fin debe ser posterior a la hora de inicio.');
+    hf.reportValidity();
+    return false;
+  }
+  return true;
+}
+
+document.querySelectorAll('#formRutaNueva, [id^="formRutaEditar"]').forEach(function (form) {
+  form.addEventListener('submit', function (ev) {
+    if (!validarHorarioRuta(this)) {
+      ev.preventDefault();
+    }
+  });
+  // Limpiar el mensaje de error en cuanto el usuario toca cualquiera de las dos horas
+  // (la validación completa solo se corre al enviar el formulario)
+  form.querySelectorAll('input[name="hora_inicio"], input[name="hora_fin"]').forEach(function (input) {
+    input.addEventListener('input', function () {
+      form.querySelector('input[name="hora_fin"]').setCustomValidity('');
+    });
+  });
+});
+
 // NUEVA RUTA
 function setupNuevaRuta() {
   const cbsNueva = document.querySelectorAll('.cb-nueva');
@@ -348,7 +380,7 @@ function setupNuevaRuta() {
   }
 
   window.actualizarListaNueva = actualizarLista;
-  
+
   // Movimiento: solo reordena en DOM, no reconstruye
   window.moverArribaNueva = function(btn) {
     const item = btn.closest('.item-contenedor');
@@ -375,7 +407,7 @@ window.actualizarListaEdit = function(rutaId) {
   const cbsEdit = document.querySelectorAll(`.cb-edit-${rutaId}`);
   const listaEdit = document.getElementById(`contenedores-lista-edit-${rutaId}`);
   const inputFinal = document.getElementById(`ids_contenedores_final_${rutaId}`);
-  
+
   const seleccionados = Array.from(cbsEdit)
     .filter(cb => cb.checked)
     .map(cb => ({ id: cb.value, nombre: cb.dataset.nombre, codigo: cb.dataset.codigo }));
@@ -399,7 +431,7 @@ window.actualizarListaEdit = function(rutaId) {
 
   const idsOrden = Array.from(listaEdit.querySelectorAll('.item-contenedor')).map(el => el.dataset.id);
   inputFinal.value = idsOrden.join(',');
-  
+
   // Actualizar números de orden
   listaEdit.querySelectorAll('.orden-badge').forEach((badge, idx) => {
     badge.textContent = idx + 1;

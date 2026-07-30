@@ -3,9 +3,12 @@
 
 {% block content %}
 <div class="page-header">
-  <div>
-    <h1 class="h3 mb-1">Dashboard</h1>
-    <p class="text-muted mb-0">Indicadores calculados al final del día seleccionado.</p>
+  <div class="page-header__card">
+    <span class="page-header__icon"><i class="bi bi-speedometer2"></i></span>
+    <div>
+      <h1 class="h3 mb-1">Dashboard</h1>
+      <p class="text-muted mb-0">Indicadores calculados al final del día seleccionado.</p>
+    </div>
   </div>
 </div>
 
@@ -125,7 +128,7 @@
     <div class="card border-0 shadow-sm">
       <div class="card-body">
         <h2 class="h6">Recolecciones por día de la semana</h2>
-        <p class="text-muted small mb-2">Histórico completo, no solo hoy — muestra en qué días suelen concentrarse las recolecciones.</p>
+        <p class="text-muted small mb-2">Semana actual — muestra en qué días de esta semana se concentran las recolecciones.</p>
         {% if resumen.recolecciones_por_dia_semana and resumen.recolecciones_por_dia_semana|sum(attribute='total') > 0 %}
         <canvas id="chartDiaSemana" height="90"></canvas>
         {% else %}
@@ -143,53 +146,58 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <h2 class="h6 mb-0">Recolectores asignados</h2>
-          <span class="small text-muted">{{ resumen.fecha }}</span>
+          <span class="small text-muted">{{ resumen.recolectores_hoy|length }}</span>
         </div>
         {% if resumen.recolectores_hoy %}
         <div class="table-responsive">
-          <table class="table table-sm align-middle mb-0">
-            <thead class="table-light">
-              <tr><th>Recolector</th><th>Código</th><th class="text-end">Rutas</th><th class="text-end">Completadas</th></tr>
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Recolector</th>
+                <th class="text-end">Rutas</th>
+                <th class="text-end">Completadas</th>
+              </tr>
             </thead>
             <tbody>
-              {% for rec in resumen.recolectores_hoy %}
+              {% for r in resumen.recolectores_hoy %}
               <tr>
-                <td>{{ rec.nombre }}</td>
-                <td><code>{{ rec.codigo_usuario }}</code></td>
-                <td class="text-end">{{ rec.rutas_hoy }}</td>
-                <td class="text-end">
-                  <span class="badge {% if rec.rutas_completadas_hoy == rec.rutas_hoy %}bg-success{% else %}text-bg-light border{% endif %}">
-                    {{ rec.rutas_completadas_hoy }}/{{ rec.rutas_hoy }}
-                  </span>
-                </td>
+                <td>{{ r.nombre }}</td>
+                <td class="text-end">{{ r.rutas_hoy }}</td>
+                <td class="text-end">{{ r.rutas_completadas_hoy }}</td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
         {% else %}
-        <p class="text-muted mb-0">Nadie tiene rutas asignadas para esta fecha.</p>
+        <p class="text-muted mb-0">Ningún recolector tiene rutas asignadas este día.</p>
         {% endif %}
       </div>
     </div>
   </div>
-
   <div class="col-lg-6">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
-        <h2 class="h6 mb-2">Contenedores cerca del llenado (&ge;80%)</h2>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="h6 mb-0">Contenedores críticos (&ge;80%)</h2>
+          <span class="small text-muted">{{ resumen.contenedores_criticos|length }}</span>
+        </div>
         {% if resumen.contenedores_criticos %}
         <div class="table-responsive">
-          <table class="table table-sm align-middle mb-0">
-            <thead class="table-light">
-              <tr><th>Contenedor</th><th>Ubicación</th><th class="text-end">Nivel</th></tr>
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Contenedor</th>
+                <th>Sector</th>
+                <th class="text-end">Nivel</th>
+              </tr>
             </thead>
             <tbody>
               {% for c in resumen.contenedores_criticos %}
               <tr>
-                <td>{{ c.nombre }}<div class="small text-muted"><code>{{ c.codigo_contenedor }}</code></div></td>
+                <td>{{ c.nombre }}</td>
                 <td>{{ c.zona }} / {{ c.sector }}</td>
-                <td class="text-end"><span class="badge bg-danger">{{ c.nivel_actual }}%</span></td>
+                <td class="text-end">{{ c.nivel_actual }}%</td>
               </tr>
               {% endfor %}
             </tbody>

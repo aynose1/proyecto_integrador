@@ -3,9 +3,12 @@
 
 {% block content %}
 <div class="page-header">
-  <div>
-    <h1 class="h3 mb-1">Configuración de Ubicaciones</h1>
-    <p class="text-muted mb-0">Gestiona las zonas y sectores donde se ubican los contenedores.</p>
+  <div class="page-header__card">
+    <span class="page-header__icon"><i class="bi bi-geo-alt"></i></span>
+    <div>
+      <h1 class="h3 mb-1">Configuración de Ubicaciones</h1>
+      <p class="text-muted mb-0">Gestiona las zonas y sectores donde se ubican los contenedores.</p>
+    </div>
   </div>
 </div>
 
@@ -39,9 +42,8 @@
                 <td>{{ z.nombre }}</td>
                 <td class="text-end">
                   <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalZonaEditar{{ z.id }}">Editar</button>
-                  <form method="post" action="{{ url_for('ubicaciones.eliminar_zona', zona_id=z.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar esta zona?')">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                  </form>
+                  <form method="post" action="{{ url_for('ubicaciones.eliminar_zona', zona_id=z.id) }}" class="d-none" id="form-eliminar-zona-{{ z.id }}"></form>
+                  <button type="button" class="btn btn-sm btn-outline-danger" data-confirm-delete="form-eliminar-zona-{{ z.id }}" data-confirm-nombre="la zona &quot;{{ z.nombre }}&quot;">Eliminar</button>
                 </td>
               </tr>
               {% else %}
@@ -76,9 +78,8 @@
                 <td>{{ s.zona.nombre }}</td>
                 <td class="text-end">
                   <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalSectorEditar{{ s.id }}">Editar</button>
-                  <form method="post" action="{{ url_for('ubicaciones.eliminar_sector', sector_id=s.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este sector?')">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                  </form>
+                  <form method="post" action="{{ url_for('ubicaciones.eliminar_sector', sector_id=s.id) }}" class="d-none" id="form-eliminar-sector-{{ s.id }}"></form>
+                  <button type="button" class="btn btn-sm btn-outline-danger" data-confirm-delete="form-eliminar-sector-{{ s.id }}" data-confirm-nombre="el sector &quot;{{ s.nombre }}&quot;">Eliminar</button>
                 </td>
               </tr>
               {% else %}
@@ -147,20 +148,16 @@
       </div>
       <div class="modal-body">
         <div class="mb-3">
+          <label class="form-label" for="s_nombre">Nombre</label>
+          <input type="text" class="form-control" id="s_nombre" name="nombre" required maxlength="100">
+        </div>
+        <div class="mb-0">
           <label class="form-label" for="s_zona">Zona</label>
           <select class="form-select" id="s_zona" name="id_zona" required>
-            <option value="">Selecciona…</option>
             {% for z in zonas %}
             <option value="{{ z.id }}">{{ z.nombre }}</option>
             {% endfor %}
           </select>
-          {% if not zonas %}
-          <div class="form-text text-warning">Primero crea una zona.</div>
-          {% endif %}
-        </div>
-        <div class="mb-0">
-          <label class="form-label" for="s_nombre">Nombre</label>
-          <input type="text" class="form-control" id="s_nombre" name="nombre" required maxlength="100" placeholder="Ej. Planta baja">
         </div>
       </div>
       <div class="modal-footer">
@@ -181,16 +178,16 @@
       </div>
       <div class="modal-body">
         <div class="mb-3">
+          <label class="form-label" for="se_nombre_{{ s.id }}">Nombre</label>
+          <input type="text" class="form-control" id="se_nombre_{{ s.id }}" name="nombre" required maxlength="100" value="{{ s.nombre }}">
+        </div>
+        <div class="mb-0">
           <label class="form-label" for="se_zona_{{ s.id }}">Zona</label>
           <select class="form-select" id="se_zona_{{ s.id }}" name="id_zona" required>
             {% for z in zonas %}
-            <option value="{{ z.id }}" {% if s.id_zona == z.id %}selected{% endif %}>{{ z.nombre }}</option>
+            <option value="{{ z.id }}" {% if s.zona.id == z.id %}selected{% endif %}>{{ z.nombre }}</option>
             {% endfor %}
           </select>
-        </div>
-        <div class="mb-0">
-          <label class="form-label" for="se_nombre_{{ s.id }}">Nombre</label>
-          <input type="text" class="form-control" id="se_nombre_{{ s.id }}" name="nombre" required maxlength="100" value="{{ s.nombre }}">
         </div>
       </div>
       <div class="modal-footer">

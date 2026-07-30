@@ -3,9 +3,12 @@
 
 {% block content %}
 <div class="page-header">
-  <div>
-    <h1 class="h3 mb-1">Reporte General de Recolección de Rutas</h1>
-    <p class="text-muted mb-0">{{ institucion }}</p>
+  <div class="page-header__card">
+    <span class="page-header__icon"><i class="bi bi-file-earmark-bar-graph"></i></span>
+    <div>
+      <h1 class="h3 mb-1">Reporte General de Recolección de Rutas</h1>
+      <p class="text-muted mb-0">{{ institucion }}</p>
+    </div>
   </div>
   {% if contexto %}
   <div class="d-flex gap-2">
