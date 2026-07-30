@@ -3,9 +3,12 @@
 
 {% block content %}
 <div class="page-header">
-  <div>
-    <h1 class="h3 mb-1">Contenedores</h1>
-    <p class="text-muted mb-0">Nivel actual actualizado por el sistema embebido vía sensor.</p>
+  <div class="d-flex align-items-center gap-3">
+    <span class="page-header__icon"><i class="bi bi-trash3"></i></span>
+    <div>
+      <h1 class="h3 mb-1">Contenedores</h1>
+      <p class="text-muted mb-0">Nivel actual actualizado por el sistema embebido vía sensor.</p>
+    </div>
   </div>
   <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalContenedorNuevo">
     <i class="bi bi-plus-lg"></i> Nuevo contenedor
@@ -40,7 +43,7 @@
           </td>
           <td>{{ c.sector.zona.nombre }} / {{ c.sector.nombre }}</td>
           <td>
-            {{ c.capacidad_max }} L
+            {{ c.capacidad_max }} Kg
             {% if c.altura_cm is none %}
             <div><span class="badge bg-warning text-dark" title="El sensor de este contenedor no podrá mandar lecturas hasta configurarla">Falta altura</span></div>
             {% endif %}
@@ -69,9 +72,8 @@
           </td>
           <td class="text-end">
             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalContenedorEditar{{ c.id }}">Editar</button>
-            <form method="post" action="{{ url_for('contenedores.eliminar', contenedor_id=c.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este contenedor?')">
-              <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-            </form>
+            <form method="post" action="{{ url_for('contenedores.eliminar', contenedor_id=c.id) }}" class="d-none" id="form-eliminar-contenedor-{{ c.id }}"></form>
+            <button type="button" class="btn btn-sm btn-outline-danger" data-confirm-delete="form-eliminar-contenedor-{{ c.id }}" data-confirm-nombre="el contenedor &quot;{{ c.nombre }}&quot;">Eliminar</button>
           </td>
         </tr>
         {% else %}
@@ -100,27 +102,23 @@
           <input type="text" class="form-control" id="c_codigo" name="codigo_contenedor" required maxlength="50">
         </div>
         <div class="mb-3">
-          <label class="form-label" for="c_cap">Capacidad máxima (L)</label>
+          <label class="form-label" for="c_cap">Capacidad máxima (Kg)</label>
           <input type="number" step="0.01" min="0.01" class="form-control" id="c_cap" name="capacidad_max" required>
         </div>
         <div class="mb-3">
           <label class="form-label" for="c_altura">Altura del sensor al fondo (cm)</label>
           <input type="number" step="0.01" min="0.01" class="form-control" id="c_altura" name="altura_cm" required>
-          <div class="form-text">Distancia desde donde va instalado el sensor hasta el fondo del contenedor vacío. Se usa para convertir la lectura del sensor en porcentaje de llenado.</div>
+          <div class="form-text">Distancia desde donde va instalado el sensor hasta el fondo del contenedor vacío.</div>
         </div>
         <div class="mb-3">
           <label class="form-label" for="c_sector">Sector</label>
           <select class="form-select" id="c_sector" name="id_sector" required>
-            <option value="">Selecciona…</option>
             {% for s in sectores %}
-            <option value="{{ s.id }}">{{ sector_label(s) }}</option>
+            <option value="{{ s.id }}">{{ s.zona.nombre }} / {{ s.nombre }}</option>
             {% endfor %}
           </select>
-          {% if not sectores %}
-          <div class="form-text text-warning">Primero crea un sector en la configuración.</div>
-          {% endif %}
         </div>
-        <div class="mb-0">
+        <div class="mb-3">
           <label class="form-label" for="c_estado">Estado</label>
           <select class="form-select" id="c_estado" name="id_estado" required>
             {% for e in estados %}
@@ -138,6 +136,23 @@
 </div>
 
 {% for c in contenedores %}
+<div class="modal fade" id="modalQr{{ c.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">QR — {{ c.nombre }}</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img src="{{ url_for('contenedores.qr_png', contenedor_id=c.id) }}" alt="QR {{ c.codigo_contenedor }}" class="img-fluid">
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary" href="{{ url_for('contenedores.qr_png', contenedor_id=c.id, download=1) }}">Descargar</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="modalContenedorEditar{{ c.id }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <form method="post" action="{{ url_for('contenedores.editar', contenedor_id=c.id) }}" class="modal-content">
@@ -160,7 +175,7 @@
           <input type="text" class="form-control" id="ce_nombre_{{ c.id }}" name="nombre" required maxlength="100" value="{{ c.nombre }}">
         </div>
         <div class="mb-3">
-          <label class="form-label" for="ce_cap_{{ c.id }}">Capacidad máxima (L)</label>
+          <label class="form-label" for="ce_cap_{{ c.id }}">Capacidad máxima (Kg)</label>
           <input type="number" step="0.01" min="0.01" class="form-control" id="ce_cap_{{ c.id }}" name="capacidad_max" required value="{{ c.capacidad_max }}">
         </div>
         <div class="mb-3">
@@ -176,15 +191,7 @@
           <label class="form-label" for="ce_sector_{{ c.id }}">Sector</label>
           <select class="form-select" id="ce_sector_{{ c.id }}" name="id_sector" required>
             {% for s in sectores %}
-            <option value="{{ s.id }}" {% if c.id_sector == s.id %}selected{% endif %}>{{ sector_label(s) }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="mb-0">
-          <label class="form-label" for="ce_estado_{{ c.id }}">Estado</label>
-          <select class="form-select" id="ce_estado_{{ c.id }}" name="id_estado" required>
-            {% for e in estados %}
-            <option value="{{ e.id }}" {% if c.id_estado == e.id %}selected{% endif %}>{{ e.estado|capitalize }}</option>
+            <option value="{{ s.id }}" {% if c.sector.id == s.id %}selected{% endif %}>{{ s.zona.nombre }} / {{ s.nombre }}</option>
             {% endfor %}
           </select>
         </div>
@@ -194,29 +201,6 @@
         <button type="submit" class="btn btn-primary">Guardar cambios</button>
       </div>
     </form>
-  </div>
-</div>
-{% endfor %}
-
-{% for c in contenedores %}
-<div class="modal fade" id="modalQr{{ c.id }}" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-sm">
-    <div class="modal-content text-center">
-      <div class="modal-header">
-        <h2 class="modal-title fs-5">QR — {{ c.nombre }}</h2>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <img src="{{ url_for('contenedores.qr_png', contenedor_id=c.id) }}" alt="Código QR de {{ c.nombre }}" class="img-fluid mb-2" width="220" height="220">
-        <div><code>{{ c.codigo_contenedor }}</code></div>
-        <p class="text-muted small mt-2 mb-0">Este código identifica al contenedor y a su dispositivo embebido. Al escanearlo desde la ruta asignada en la app móvil, el contenedor se marca como recolectado.</p>
-      </div>
-      <div class="modal-footer justify-content-center">
-        <a class="btn btn-primary btn-sm" href="{{ url_for('contenedores.qr_png', contenedor_id=c.id, download=1) }}">
-          <i class="bi bi-download"></i> Descargar PNG
-        </a>
-      </div>
-    </div>
   </div>
 </div>
 {% endfor %}
