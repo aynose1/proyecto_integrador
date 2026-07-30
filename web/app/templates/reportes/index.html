@@ -3,20 +3,15 @@
 
 {% block content %}
 <div class="page-header">
-  <div class="page-header__card">
-    <span class="page-header__icon"><i class="bi bi-file-earmark-bar-graph"></i></span>
-    <div>
-      <h1 class="h3 mb-1">Reporte General de Recolección de Rutas</h1>
-      <p class="text-muted mb-0">{{ institucion }}</p>
-    </div>
-  </div>
-  {% if contexto %}
-  <div class="d-flex gap-2">
-    <a href="{{ url_for('reportes.exportar_excel', **request.args) }}" class="btn btn-success"><i class="bi bi-file-earmark-spreadsheet"></i> Exportar Excel</a>
-    <a href="{{ url_for('reportes.exportar_pdf', **request.args) }}" class="btn btn-danger"><i class="bi bi-file-earmark-pdf"></i> Exportar PDF</a>
-  </div>
-  {% endif %}
+  <h1 class="h3 mb-1">Reporte General de Recolección de Rutas</h1>
+  <p class="text-muted mb-0">{{ institucion }}</p>
 </div>
+{% if contexto %}
+<div class="page-header-actions">
+  <a href="{{ url_for('reportes.exportar_excel', **request.args) }}" class="btn btn-success"><i class="bi bi-file-earmark-spreadsheet"></i> Exportar Excel</a>
+  <a href="{{ url_for('reportes.exportar_pdf', **request.args) }}" class="btn btn-danger"><i class="bi bi-file-earmark-pdf"></i> Exportar PDF</a>
+</div>
+{% endif %}
 
 <div class="card border-0 shadow-sm mt-4">
   <div class="card-body">
@@ -171,33 +166,39 @@
   <div class="col-12">
     <div class="card border-0 shadow-sm">
       <div class="card-body">
-        <h2 class="h6">Resumen final</h2>
-        <ul class="mb-0">
-          <li>
-            Tiempo promedio por ruta:
-            {% if contexto.resumen_final.tiempo_promedio_minutos is not none %}
-              {{ contexto.resumen_final.tiempo_promedio_minutos }} min
-            {% else %}
-              No disponible (faltan horas de inicio/fin capturadas)
-            {% endif %}
-          </li>
-          <li>
-            Ruta con mayor número de contenedores:
-            {% if contexto.resumen_final.ruta_mayor %}
-              {{ contexto.resumen_final.ruta_mayor }} ({{ contexto.resumen_final.ruta_mayor_cantidad }})
-            {% else %}
-              N/D
-            {% endif %}
-          </li>
-          <li>
-            Ruta con menor número de contenedores:
-            {% if contexto.resumen_final.ruta_menor %}
-              {{ contexto.resumen_final.ruta_menor }} ({{ contexto.resumen_final.ruta_menor_cantidad }})
-            {% else %}
-              N/D
-            {% endif %}
-          </li>
-        </ul>
+        <h2 class="h6 mb-3">Resumen final</h2>
+        <div class="stat-list">
+          <div class="stat-list__item">
+            <span class="stat-list__label">Tiempo promedio por ruta</span>
+            <span class="stat-list__value">
+              {% if contexto.resumen_final.tiempo_promedio_minutos is not none %}
+                {{ contexto.resumen_final.tiempo_promedio_minutos }} min
+              {% else %}
+                <span class="text-muted fw-normal">No disponible</span>
+              {% endif %}
+            </span>
+          </div>
+          <div class="stat-list__item">
+            <span class="stat-list__label">Ruta con mayor número de contenedores</span>
+            <span class="stat-list__value">
+              {% if contexto.resumen_final.ruta_mayor %}
+                {{ contexto.resumen_final.ruta_mayor }} <span class="text-muted fw-normal">({{ contexto.resumen_final.ruta_mayor_cantidad }})</span>
+              {% else %}
+                <span class="text-muted fw-normal">N/D</span>
+              {% endif %}
+            </span>
+          </div>
+          <div class="stat-list__item">
+            <span class="stat-list__label">Ruta con menor número de contenedores</span>
+            <span class="stat-list__value">
+              {% if contexto.resumen_final.ruta_menor %}
+                {{ contexto.resumen_final.ruta_menor }} <span class="text-muted fw-normal">({{ contexto.resumen_final.ruta_menor_cantidad }})</span>
+              {% else %}
+                <span class="text-muted fw-normal">N/D</span>
+              {% endif %}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

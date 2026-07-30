@@ -378,12 +378,52 @@ thead.table-light th,
   text-decoration: underline;
 }
 
+/* ---------- Header de cada módulo: tarjeta a todo el ancho del
+   content, SIN los botones de acción (esos van en .page-header-actions,
+   en su propia fila debajo) ---------- */
 .page-header {
+  background: var(--brand-aqua-100);
+  border: 1px solid rgba(11, 59, 56, 0.10);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+}
+
+.page-header-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
   flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* ---------- Filas etiqueta/valor (ej. "Resumen final" en Reportes) ---------- */
+.stat-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-list__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.stat-list__item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.stat-list__label {
+  color: var(--ink-600);
+  font-size: 0.9rem;
+}
+
+.stat-list__value {
+  font-weight: 600;
+  color: var(--ink-900);
+  text-align: right;
 }
 
 .nivel-bar {
@@ -464,32 +504,4 @@ thead.table-light th,
 .auth-header__tagline {
   font-size: 0.85rem;
   color: var(--ink-400);
-}
-
-/* ---------- Tarjeta que envuelve título + descripción de cada módulo
-   (el botón de acción, si existe, queda FUERA de esta tarjeta) ---------- */
-.page-header__card {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  background: var(--brand-aqua-100);
-  border: 1px solid rgba(11, 59, 56, 0.10);
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.page-header__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--brand-teal-700);
-  font-size: 1.3rem;
-  box-shadow: 0 1px 3px rgba(11, 59, 56, 0.14);
 }
