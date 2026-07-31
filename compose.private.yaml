@@ -1,0 +1,150 @@
+services:
+  mysql:
+    image: mysql:latest
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-user_management}
+      MYSQL_USER: ${MYSQL_USER:-appuser}
+      MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./mysql/init/02-exporter.sql:/docker-entrypoint-initdb.d/02-exporter.sql:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    networks:
+      - data_network
+  api1:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./src/backend/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+    - "8001:8000"
+    networks:
+      - app_network
+      - data_network
+
+  api2:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./src/backend/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+    - "8002:8000"
+    networks:
+      - app_network
+      - data_network
+
+  flask1:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./src/web/.env
+    depends_on:
+      - api
+    ports:
+      - "5001:5000"
+    networks:
+      - app_network
+
+  flask2:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./src/web/.env
+    depends_on:
+      - api
+    ports:
+      - "5002:5000"
+    networks:
+      - app_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - app_network
+      - monitoring_network
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    networks:
+      - monitoring_network
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - monitoring_network
+
+  mysql_exporter:
+    image: prom/mysqld-exporter:latest
+    restart: unless-stopped
+    command:
+      - --config.my-cnf=/cfg/.my.cnf
+    volumes:
+      - ./mysql/exporter.my.cnf:/cfg/.my.cnf:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - data_network
+      - monitoring_network
+
+networks:
+  app_network:
+  data_network:
+    internal: true
+  monitoring_network:
+    internal: true
+
+volumes:
+  mysql_data:
+  redis_data:
+  prometheus_data:

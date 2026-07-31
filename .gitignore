@@ -1,2 +1,5 @@
-.env
-*.env
+.envsrc/backend/.env 
+src/backend/.env 
+.env 
+haproxy/certs/ 
+mysql/exporter.my.cnf 
