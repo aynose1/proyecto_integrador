@@ -125,7 +125,7 @@ services:
       # Sin esto, Metro anuncia la IP INTERNA del contenedor en el QR/URL
       # de conexion, que el celular no puede alcanzar. Con esto, anuncia
       # la IP real de este host (donde Docker mapea el puerto 8081).
-      REACT_NATIVE_PACKAGER_HOSTNAME: 192.168.10.101
+      REACT_NATIVE_PACKAGER_HOSTNAME: 192.168.100.98
     ports:
       - "8081:8081"
     networks:
