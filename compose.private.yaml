@@ -4,68 +4,93 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-user_management}
+      # IMPORTANTE: debe coincidir con DB_NAME en src/backend/.env
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gestion_residuos}
       MYSQL_USER: ${MYSQL_USER:-appuser}
       MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD}
+      # Usadas por mysql/init/01-init-exporter.sh para crear el usuario
+      # de monitoreo. Deben coincidir con mysql/exporter.my.cnf.
+      MYSQL_EXPORTER_USER: ${MYSQL_EXPORTER_USER:-exporter}
+      MYSQL_EXPORTER_PASSWORD: ${MYSQL_EXPORTER_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./mysql/init/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ./mysql/init/02-exporter.sql:/docker-entrypoint-initdb.d/02-exporter.sql:ro
+      - ./mysql/init/01-init-exporter.sh:/docker-entrypoint-initdb.d/01-init-exporter.sh:ro
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"
+          "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"
         ]
       interval: 5s
       timeout: 5s
-      retries: 20
-      start_period: 20s
+      retries: 30
+      start_period: 60s
     networks:
       - data_network
+
+  # Corre "alembic upgrade head" UNA sola vez y termina. api1/api2 esperan
+  # a que este servicio termine bien antes de arrancar (ver
+  # "condition: service_completed_successfully" mas abajo) -- evita que
+  # dos replicas intenten migrar la misma base al mismo tiempo.
+  migrate:
+    build:
+      context: ./src/backend
+      dockerfile: ../../api/Dockerfile
+    env_file:
+      - ./src/backend/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - data_network
+    command: ["alembic", "upgrade", "head"]
+
   api1:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: ./src/backend
+      dockerfile: ../../api/Dockerfile
     restart: unless-stopped
     env_file:
       - ./src/backend/.env
     depends_on:
       mysql:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
-    - "8001:8000"
+      - "8001:8000"
     networks:
       - app_network
       - data_network
 
   api2:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: ./src/backend
+      dockerfile: ../../api/Dockerfile
     restart: unless-stopped
     env_file:
       - ./src/backend/.env
     depends_on:
       mysql:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
-    - "8002:8000"
+      - "8002:8000"
     networks:
       - app_network
       - data_network
 
   flask1:
     build:
-      context: ./web
-      dockerfile: Dockerfile
+      context: ./src/web
+      dockerfile: ../../web/Dockerfile
     restart: unless-stopped
     env_file:
       - ./src/web/.env
     depends_on:
-      - api
+      - api1
+      - api2
     ports:
       - "5001:5000"
     networks:
@@ -73,17 +98,40 @@ services:
 
   flask2:
     build:
-      context: ./web
-      dockerfile: Dockerfile
+      context: ./src/web
+      dockerfile: ../../web/Dockerfile
     restart: unless-stopped
     env_file:
       - ./src/web/.env
     depends_on:
-      - api
+      - api1
+      - api2
     ports:
       - "5002:5000"
     networks:
       - app_network
+
+  # Servidor de desarrollo de Expo (Metro), para que el celular se
+  # conecte por LAN sin necesitar Node/npm instalados en la maquina.
+  # No habla con MySQL directamente, asi que no necesita data_network.
+  pi_movil:
+    build:
+      context: ./src/pi_movil
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./src/pi_movil/.env
+    environment:
+      # Sin esto, Metro anuncia la IP INTERNA del contenedor en el QR/URL
+      # de conexion, que el celular no puede alcanzar. Con esto, anuncia
+      # la IP real de este host (donde Docker mapea el puerto 8081).
+      REACT_NATIVE_PACKAGER_HOSTNAME: 192.168.10.101
+    ports:
+      - "8081:8081"
+    networks:
+      - app_network
+    stdin_open: true
+    tty: true
 
   prometheus:
     image: prom/prometheus:latest
@@ -119,7 +167,7 @@ services:
     command:
       - --path.rootfs=/host
     volumes:
-      - /:/host:ro,rslave
+      - /:/host:ro
     networks:
       - monitoring_network
 
@@ -146,5 +194,4 @@ networks:
 
 volumes:
   mysql_data:
-  redis_data:
   prometheus_data:

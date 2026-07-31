@@ -1,0 +1,12 @@
+node_modules
+.expo
+.git
+.gitignore
+android
+ios
+web-build
+dist
+npm-debug.*
+*.log
+.env
+.env.local
