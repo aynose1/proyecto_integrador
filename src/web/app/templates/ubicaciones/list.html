@@ -143,17 +143,19 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label" for="s_nombre">Nombre</label>
-          <input type="text" class="form-control" id="s_nombre" name="nombre" required maxlength="100">
-        </div>
-        <div class="mb-0">
-          <label class="form-label" for="s_zona">Zona</label>
-          <select class="form-select" id="s_zona" name="id_zona" required>
-            {% for z in zonas %}
-            <option value="{{ z.id }}">{{ z.nombre }}</option>
-            {% endfor %}
-          </select>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="s_nombre">Nombre</label>
+            <input type="text" class="form-control" id="s_nombre" name="nombre" required maxlength="100">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="s_zona">Zona</label>
+            <select class="form-select" id="s_zona" name="id_zona" required>
+              {% for z in zonas %}
+              <option value="{{ z.id }}">{{ z.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -173,17 +175,19 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label" for="se_nombre_{{ s.id }}">Nombre</label>
-          <input type="text" class="form-control" id="se_nombre_{{ s.id }}" name="nombre" required maxlength="100" value="{{ s.nombre }}">
-        </div>
-        <div class="mb-0">
-          <label class="form-label" for="se_zona_{{ s.id }}">Zona</label>
-          <select class="form-select" id="se_zona_{{ s.id }}" name="id_zona" required>
-            {% for z in zonas %}
-            <option value="{{ z.id }}" {% if s.zona.id == z.id %}selected{% endif %}>{{ z.nombre }}</option>
-            {% endfor %}
-          </select>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="se_nombre_{{ s.id }}">Nombre</label>
+            <input type="text" class="form-control" id="se_nombre_{{ s.id }}" name="nombre" required maxlength="100" value="{{ s.nombre }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="se_zona_{{ s.id }}">Zona</label>
+            <select class="form-select" id="se_zona_{{ s.id }}" name="id_zona" required>
+              {% for z in zonas %}
+              <option value="{{ z.id }}" {% if s.zona.id == z.id %}selected{% endif %}>{{ z.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
       </div>
       <div class="modal-footer">

@@ -21,7 +21,6 @@
           <th>ID</th>
           <th>Nombre</th>
           <th>Sector (Zona/Sector)</th>
-          <th>Capacidad</th>
           <th>Nivel actual</th>
           <th>Peso actual</th>
           <th>Estado</th>
@@ -35,12 +34,6 @@
           <td><code>{{ c.codigo_contenedor }}</code></td>
           <td>{{ c.nombre }}</td>
           <td>{{ c.sector.zona.nombre }} / {{ c.sector.nombre }}</td>
-          <td>
-            {{ c.capacidad_max }} Kg
-            {% if c.altura_cm is none %}
-            <div><span class="badge bg-warning text-dark" title="El sensor de este contenedor no podrá mandar lecturas hasta configurarla">Falta altura</span></div>
-            {% endif %}
-          </td>
           <td style="min-width: 180px;">
             <div class="d-flex align-items-center gap-2">
               <div class="progress flex-grow-1 nivel-bar" role="progressbar">
@@ -48,6 +41,9 @@
               </div>
               <span class="small fw-semibold">{{ nivel }}%</span>
             </div>
+            {% if c.altura_cm is none %}
+            <span class="badge bg-warning text-dark mt-1" title="El sensor de este contenedor no podrá mandar lecturas hasta configurarla">Falta altura</span>
+            {% endif %}
           </td>
           <td>{{ c.peso_actual }} Kg</td>
           <td>
@@ -72,7 +68,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="8" class="text-center text-muted py-4">No hay contenedores registrados.</td></tr>
+        <tr><td colspan="7" class="text-center text-muted py-4">No hay contenedores registrados.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -81,45 +77,47 @@
 
 {# Modal crear #}
 <div class="modal fade" id="modalContenedorNuevo" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <form method="post" action="{{ url_for('contenedores.crear') }}" class="modal-content">
       <div class="modal-header">
         <h2 class="modal-title fs-5">Nuevo contenedor</h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label" for="c_nombre">Nombre</label>
-          <input type="text" class="form-control" id="c_nombre" name="nombre" required maxlength="100">
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="c_codigo">Código contenedor (QR)</label>
-          <input type="text" class="form-control" id="c_codigo" name="codigo_contenedor" required maxlength="50">
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="c_cap">Capacidad máxima (Kg)</label>
-          <input type="number" step="0.01" min="0.01" class="form-control" id="c_cap" name="capacidad_max" required>
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="c_altura">Altura del sensor al fondo (cm)</label>
-          <input type="number" step="0.01" min="0.01" class="form-control" id="c_altura" name="altura_cm" required>
-          <div class="form-text">Distancia desde donde va instalado el sensor hasta el fondo del contenedor vacío.</div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="c_sector">Sector</label>
-          <select class="form-select" id="c_sector" name="id_sector" required>
-            {% for s in sectores %}
-            <option value="{{ s.id }}">{{ s.zona.nombre }} / {{ s.nombre }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="c_estado">Estado</label>
-          <select class="form-select" id="c_estado" name="id_estado" required>
-            {% for e in estados %}
-            <option value="{{ e.id }}">{{ e.estado|capitalize }}</option>
-            {% endfor %}
-          </select>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label" for="c_nombre">Nombre</label>
+            <input type="text" class="form-control" id="c_nombre" name="nombre" required maxlength="100">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="c_codigo">Código contenedor (QR)</label>
+            <input type="text" class="form-control" id="c_codigo" name="codigo_contenedor" required maxlength="50">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="c_cap">Capacidad máxima (Kg)</label>
+            <input type="number" step="0.01" min="0.01" class="form-control" id="c_cap" name="capacidad_max" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="c_altura">Altura del sensor al fondo (cm)</label>
+            <input type="number" step="0.01" min="0.01" class="form-control" id="c_altura" name="altura_cm" required>
+            <div class="form-text">Distancia del sensor al fondo vacío.</div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="c_estado">Estado</label>
+            <select class="form-select" id="c_estado" name="id_estado" required>
+              {% for e in estados %}
+              <option value="{{ e.id }}">{{ e.estado|capitalize }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="c_sector">Sector</label>
+            <select class="form-select" id="c_sector" name="id_sector" required>
+              {% for s in sectores %}
+              <option value="{{ s.id }}">{{ s.zona.nombre }} / {{ s.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -225,46 +223,47 @@
 </div>
 
 <div class="modal fade" id="modalContenedorEditar{{ c.id }}" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <form method="post" action="{{ url_for('contenedores.editar', contenedor_id=c.id) }}" class="modal-content">
       <div class="modal-header">
         <h2 class="modal-title fs-5">Editar contenedor</h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Código QR</label>
-          <input type="text" class="form-control" value="{{ c.codigo_contenedor }}" disabled>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Nivel actual</label>
-          <input type="text" class="form-control" value="{{ c.nivel_actual }}%" disabled>
-          <div class="form-text">Actualizado automáticamente por el sensor embebido.</div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="ce_nombre_{{ c.id }}">Nombre</label>
-          <input type="text" class="form-control" id="ce_nombre_{{ c.id }}" name="nombre" required maxlength="100" value="{{ c.nombre }}">
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="ce_cap_{{ c.id }}">Capacidad máxima (Kg)</label>
-          <input type="number" step="0.01" min="0.01" class="form-control" id="ce_cap_{{ c.id }}" name="capacidad_max" required value="{{ c.capacidad_max }}">
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="ce_altura_{{ c.id }}">Altura del sensor al fondo (cm)</label>
-          <input type="number" step="0.01" min="0.01" class="form-control" id="ce_altura_{{ c.id }}" name="altura_cm" required value="{{ c.altura_cm if c.altura_cm is not none else '' }}">
-          {% if c.altura_cm is none %}
-          <div class="form-text text-warning">Sin configurar todavía: el sensor de este contenedor no podrá mandar lecturas hasta que la captures.</div>
-          {% else %}
-          <div class="form-text">Distancia desde donde va instalado el sensor hasta el fondo del contenedor vacío.</div>
-          {% endif %}
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="ce_sector_{{ c.id }}">Sector</label>
-          <select class="form-select" id="ce_sector_{{ c.id }}" name="id_sector" required>
-            {% for s in sectores %}
-            <option value="{{ s.id }}" {% if c.sector.id == s.id %}selected{% endif %}>{{ s.zona.nombre }} / {{ s.nombre }}</option>
-            {% endfor %}
-          </select>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Código QR</label>
+            <input type="text" class="form-control" value="{{ c.codigo_contenedor }}" disabled>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Nivel actual</label>
+            <input type="text" class="form-control" value="{{ c.nivel_actual }}%" disabled>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label" for="ce_nombre_{{ c.id }}">Nombre</label>
+            <input type="text" class="form-control" id="ce_nombre_{{ c.id }}" name="nombre" required maxlength="100" value="{{ c.nombre }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="ce_cap_{{ c.id }}">Capacidad máxima (Kg)</label>
+            <input type="number" step="0.01" min="0.01" class="form-control" id="ce_cap_{{ c.id }}" name="capacidad_max" required value="{{ c.capacidad_max }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="ce_altura_{{ c.id }}">Altura del sensor al fondo (cm)</label>
+            <input type="number" step="0.01" min="0.01" class="form-control" id="ce_altura_{{ c.id }}" name="altura_cm" required value="{{ c.altura_cm if c.altura_cm is not none else '' }}">
+            {% if c.altura_cm is none %}
+            <div class="form-text text-warning">Sin configurar: el sensor no podrá mandar lecturas hasta que la captures.</div>
+            {% else %}
+            <div class="form-text">Distancia del sensor al fondo vacío.</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="ce_sector_{{ c.id }}">Sector</label>
+            <select class="form-select" id="ce_sector_{{ c.id }}" name="id_sector" required>
+              {% for s in sectores %}
+              <option value="{{ s.id }}" {% if c.sector.id == s.id %}selected{% endif %}>{{ s.zona.nombre }} / {{ s.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
