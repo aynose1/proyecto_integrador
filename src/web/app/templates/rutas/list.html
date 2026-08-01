@@ -84,9 +84,15 @@
           </td>
           <td class="text-end">
             <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalRutaVer{{ r.id }}">Ver</button>
+            {% if r.fecha >= hoy %}
             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalRutaEditar{{ r.id }}">Editar</button>
             <form method="post" action="{{ url_for('rutas.eliminar', ruta_id=r.id) }}" class="d-none" id="form-eliminar-ruta-{{ r.id }}"></form>
             <button type="button" class="btn btn-sm btn-outline-danger" data-confirm-delete="form-eliminar-ruta-{{ r.id }}" data-confirm-nombre="la ruta &quot;{{ r.nombre }}&quot;">Eliminar</button>
+            {% else %}
+            <span class="badge text-bg-light border text-muted" title="Las rutas de días anteriores no se pueden modificar">
+              <i class="bi bi-lock"></i> Solo lectura
+            </span>
+            {% endif %}
           </td>
         </tr>
         {% else %}
@@ -229,11 +235,17 @@
                 <td>{{ nivel }}%</td>
                 <td>{{ c.peso_actual }} Kg</td>
                 <td>
+                  {% if r.fecha >= hoy %}
                   <select name="estado_detalle_{{ detalle.id }}" class="form-select form-select-sm" style="width: auto; display: inline-block;">
                     {% for e in estados_detalle %}
                     <option value="{{ e.id }}" {% if detalle.estado.id == e.id %}selected{% endif %}>{{ e.estado|capitalize }}</option>
                     {% endfor %}
                   </select>
+                  {% else %}
+                  <span class="badge {% if detalle.estado.estado == 'recolectado' %}bg-success{% else %}text-bg-secondary{% endif %}">
+                    {{ detalle.estado.estado|capitalize }}
+                  </span>
+                  {% endif %}
                 </td>
               </tr>
               {% else %}
@@ -246,7 +258,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
-        {% if r.detalles %}
+        {% if r.detalles and r.fecha >= hoy %}
         <button type="submit" form="formEstados{{ r.id }}" class="btn btn-primary">Cambiar estatus</button>
         {% endif %}
       </div>

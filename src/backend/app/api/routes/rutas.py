@@ -6,10 +6,26 @@ from sqlalchemy.orm import Session
 from app import crud
 from app.api.deps import get_current_user, require_admin, require_recolector
 from app.db.session import get_db
+from app.models.ruta import Ruta
 from app.models.usuario import Usuario
 from app.schemas.ruta import DetalleRutaEstadoUpdate, DetalleRutaRead, RecolectarContenedorRequest, RutaCreate, RutaRead, RutaSummary, RutaUpdate
 
 router = APIRouter(prefix="/rutas", tags=["rutas"])
+
+
+def _validar_ruta_modificable(ruta_obj: Ruta) -> None:
+    """
+    Protege contra alterar datos históricos: una ruta de un día ANTERIOR
+    a hoy no se puede editar, eliminar, ni cambiar el estado de sus
+    contenedores — ni por el administrador (editar/eliminar/forzar
+    estado) ni por el recolector (marcar recolectado vía QR). Rutas de
+    HOY siguen siendo modificables con normalidad.
+    """
+    if ruta_obj.fecha < date.today():
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "No se pueden modificar rutas de días anteriores.",
+        )
 
 
 @router.get("/me", response_model=list[RutaSummary])
@@ -73,6 +89,7 @@ def actualizar_ruta(ruta_id: int, payload: RutaUpdate, db: Session = Depends(get
     ruta_obj = crud.ruta.get(db, ruta_id)
     if not ruta_obj:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ruta no encontrada")
+    _validar_ruta_modificable(ruta_obj)
     return crud.ruta.update(db, ruta_obj, payload)
 
 
@@ -81,6 +98,7 @@ def eliminar_ruta(ruta_id: int, db: Session = Depends(get_db)) -> None:
     ruta_obj = crud.ruta.get(db, ruta_id)
     if not ruta_obj:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ruta no encontrada")
+    _validar_ruta_modificable(ruta_obj)
     crud.ruta.remove(db, ruta_id)
 
 
@@ -95,13 +113,15 @@ def marcar_contenedor_recolectado(
     Llamado por la app móvil al escanear el QR de un contenedor durante
     una ruta: pasa ese contenedor, dentro de ESTA ruta, de 'pendiente' a
     'recolectado'. Protegido contra BOLA: solo el recolector dueño de la
-    ruta puede marcarla, igual que en GET /rutas/{id}.
+    ruta puede marcarla, igual que en GET /rutas/{id}. También protegido
+    contra alterar rutas de días anteriores (ver _validar_ruta_modificable).
     """
     ruta_obj = crud.ruta.get(db, ruta_id)
     if not ruta_obj:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ruta no encontrada")
     if ruta_obj.id_usuario != current_user.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "No tienes acceso a esta ruta")
+    _validar_ruta_modificable(ruta_obj)
 
     detalle = crud.ruta.marcar_recolectado(db, ruta_obj, payload.codigo_contenedor)
     if not detalle:
@@ -122,11 +142,13 @@ def actualizar_estado_detalle(
     contenedor dentro de una ruta, sin pasar por el escaneo de QR — útil
     para pruebas o para corregir un registro. Restringido a esos dos
     estados: el catálogo 'estados' es compartido con Contenedor e
-    Incidencia y no todos sus valores aplican aquí.
+    Incidencia y no todos sus valores aplican aquí. También protegido
+    contra alterar rutas de días anteriores.
     """
     ruta_obj = crud.ruta.get(db, ruta_id)
     if not ruta_obj:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ruta no encontrada")
+    _validar_ruta_modificable(ruta_obj)
 
     if not crud.ruta.estado_es_valido_para_detalle(db, payload.id_estado):
         raise HTTPException(

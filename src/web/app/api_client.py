@@ -36,7 +36,17 @@ class APIClient:
             payload = response.json()
             detail = payload.get("detail", response.text)
             if isinstance(detail, list):
-                detail = "; ".join(str(item) for item in detail)
+                # Los errores de validación de FastAPI/Pydantic vienen
+                # como una lista de dicts {"msg": "...", "loc": [...], ...},
+                # no de strings simples -- sin esto, el mensaje que ve el
+                # usuario es un volcado feo de diccionarios de Python.
+                mensajes = []
+                for item in detail:
+                    if isinstance(item, dict):
+                        mensajes.append(str(item.get("msg", item)))
+                    else:
+                        mensajes.append(str(item))
+                detail = "; ".join(mensajes)
         except ValueError:
             detail = response.text or "Error desconocido en la API"
         raise APIError(str(detail), response.status_code)
@@ -70,6 +80,7 @@ class APIClient:
 
 def get_api_client() -> APIClient:
     return APIClient(token=session.get("access_token"))
+
 
 def api_request(method: str, path: str, **kwargs):
     client = get_api_client()

@@ -37,6 +37,15 @@ class CRUDRegistroNivel:
         db.commit()
         db.refresh(registro)
         db.refresh(contenedor)
+
+        # Import local para evitar import circular (crud/__init__.py ya
+        # importa este módulo; notificacion.py no importa de vuelta a
+        # registro_nivel, así que en realidad no habría ciclo, pero se
+        # deja local de todos modos por consistencia con registro_peso.py).
+        from app.crud.notificacion import notificacion as crud_notificacion
+
+        crud_notificacion.revisar_discrepancia_recoleccion(db, contenedor)
+
         return registro
 
     def historial_por_contenedor(

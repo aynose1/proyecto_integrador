@@ -1,5 +1,6 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.core.password_policy import validar_password_fuerte
 from app.schemas.catalogos import TipoUsuarioRead
 
 
@@ -14,6 +15,11 @@ class UsuarioCreate(UsuarioBase):
     contrasena: str = Field(min_length=8)
     id_tipo_usuario: int
 
+    @field_validator("contrasena")
+    @classmethod
+    def _validar_contrasena(cls, v: str) -> str:
+        return validar_password_fuerte(v)
+
 
 class UsuarioUpdate(BaseModel):
     nombre: str | None = Field(default=None, max_length=100)
@@ -21,6 +27,15 @@ class UsuarioUpdate(BaseModel):
     apellido_materno: str | None = Field(default=None, max_length=100)
     contrasena: str | None = Field(default=None, min_length=8)
     id_tipo_usuario: int | None = None
+
+    @field_validator("contrasena")
+    @classmethod
+    def _validar_contrasena(cls, v: str | None) -> str | None:
+        # Opcional: si no se manda (no se quiere cambiar la contraseña),
+        # no hay nada que validar.
+        if v is None:
+            return v
+        return validar_password_fuerte(v)
 
 
 class UsuarioRead(UsuarioBase):
@@ -35,6 +50,11 @@ class AdminRegisterRequest(BaseModel):
     apellido_paterno: str = Field(max_length=100)
     apellido_materno: str | None = Field(default=None, max_length=100)
     contrasena: str = Field(min_length=8)
+
+    @field_validator("contrasena")
+    @classmethod
+    def _validar_contrasena(cls, v: str) -> str:
+        return validar_password_fuerte(v)
 
 
 class LoginRequest(BaseModel):

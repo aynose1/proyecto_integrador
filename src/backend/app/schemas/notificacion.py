@@ -7,7 +7,7 @@ class NotificacionCreate(BaseModel):
     contenido: str = Field(max_length=2000)
     id_contenedor: int
     id_tipo_notificacion: int
-    id_usuario: int
+    id_usuario: int | None = None
 
 
 class NotificacionRead(BaseModel):
@@ -16,4 +16,5 @@ class NotificacionRead(BaseModel):
     contenido: str
     id_contenedor: int
     tipo_notificacion: TipoNotificacionRead
-    id_usuario: int
+    id_usuario: int | None
+    leida: bool

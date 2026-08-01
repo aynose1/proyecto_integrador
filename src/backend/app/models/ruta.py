@@ -1,4 +1,6 @@
-from sqlalchemy import Date, ForeignKey, Integer, String, Time
+from datetime import datetime
+
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Time
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
@@ -37,6 +39,15 @@ class DetalleRuta(Base):
     id_contenedor: Mapped[int] = mapped_column(ForeignKey("contenedores.id"), nullable=False, index=True)
     id_estado: Mapped[int] = mapped_column(ForeignKey("estados.id"), nullable=False)
     orden: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    # Cuándo se marcó como 'recolectado' (por escaneo QR o forzado por
+    # admin) -- usado para saber cuál es "la siguiente lectura real" del
+    # sensor después de la recolección, en la detección de discrepancias
+    # (ver crud/notificacion.py::revisar_discrepancia_recoleccion).
+    fecha_recolectado: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Evita generar más de una notificación de discrepancia por cada
+    # vez que se marca recolectado.
+    discrepancia_revisada: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     ruta = relationship("Ruta", back_populates="detalles")
     contenedor = relationship("Contenedor")

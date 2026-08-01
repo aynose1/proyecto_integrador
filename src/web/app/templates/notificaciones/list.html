@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Notificaciones — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="h3 mb-1">Notificaciones</h1>
+  <p class="text-muted mb-0">Discrepancias detectadas por el sistema e incidencias reportadas por los recolectores.</p>
+</div>
+{% include "_flash_messages.html" %}
+
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-header bg-white border-bottom">
+    <nav class="nav nav-tabs nav-fill" role="tablist" style="margin: -1px -1px 0 -1px;">
+      <button class="nav-link {% if tab == 'discrepancias' %}active{% endif %}" id="tab-discrepancias-btn" data-bs-toggle="tab" data-bs-target="#tab-discrepancias" type="button" role="tab">
+        Discrepancias
+        {% set sin_leer = discrepancias|selectattr('leida', 'equalto', false)|list|length %}
+        {% if sin_leer > 0 %}<span class="badge bg-danger ms-1">{{ sin_leer }}</span>{% endif %}
+      </button>
+      <button class="nav-link {% if tab == 'incidencias' %}active{% endif %}" id="tab-incidencias-btn" data-bs-toggle="tab" data-bs-target="#tab-incidencias" type="button" role="tab">
+        Incidencias
+        {% set pendientes = incidencias|selectattr('estado.estado', 'equalto', 'pendiente')|list|length %}
+        {% if pendientes > 0 %}<span class="badge bg-danger ms-1">{{ pendientes }}</span>{% endif %}
+      </button>
+    </nav>
+  </div>
+
+  <div class="tab-content">
+    {# ========== DISCREPANCIAS (sistema) ========== #}
+    <div class="tab-pane fade {% if tab == 'discrepancias' %}show active{% endif %}" id="tab-discrepancias" role="tabpanel">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Contenedor</th>
+              <th>Tipo</th>
+              <th>Detalle</th>
+              <th>Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in discrepancias %}
+            {% set cont = contenedores_por_id.get(n.id_contenedor) %}
+            <tr>
+              <td>
+                {% if cont %}
+                {{ cont.nombre }}
+                <div class="small text-muted"><code>{{ cont.codigo_contenedor }}</code></div>
+                {% else %}
+                <span class="text-muted">Contenedor #{{ n.id_contenedor }}</span>
+                {% endif %}
+              </td>
+              <td>{{ n.tipo_notificacion.tipo }}</td>
+              <td class="small">{{ n.contenido }}</td>
+              <td>
+                {% if n.leida %}
+                <span class="badge text-bg-secondary">Leída</span>
+                {% else %}
+                <span class="badge bg-danger">Sin leer</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if not n.leida %}
+                <form method="post" action="{{ url_for('notificaciones.marcar_leida', notificacion_id=n.id) }}" class="d-inline">
+                  <button type="submit" class="btn btn-sm btn-outline-primary">Marcar como leída</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center text-muted py-4">No hay discrepancias registradas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# ========== INCIDENCIAS (recolectores) ========== #}
+    <div class="tab-pane fade {% if tab == 'incidencias' %}show active{% endif %}" id="tab-incidencias" role="tabpanel">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Contenedor</th>
+              <th>Motivo</th>
+              <th>Comentario</th>
+              <th>Reportó</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in incidencias %}
+            {% set cont = contenedores_por_id.get(i.id_contenedor) %}
+            {% set recolector = usuarios_por_id.get(i.id_usuario) %}
+            <tr>
+              <td>
+                {% if cont %}
+                {{ cont.nombre }}
+                <div class="small text-muted"><code>{{ cont.codigo_contenedor }}</code></div>
+                {% else %}
+                <span class="text-muted">Contenedor #{{ i.id_contenedor }}</span>
+                {% endif %}
+              </td>
+              <td>{{ i.motivo.motivo }}</td>
+              <td class="small">{{ i.comentario or '—' }}</td>
+              <td>{% if recolector %}{{ recolector.nombre }} {{ recolector.apellido_paterno }}{% else %}—{% endif %}</td>
+              <td class="small text-muted">{{ i.fecha_hora }}</td>
+              <td>
+                {% if i.estado.estado == 'atendido' %}
+                <span class="badge text-bg-secondary">Atendida</span>
+                {% else %}
+                <span class="badge bg-danger">Pendiente</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if i.estado.estado != 'atendido' %}
+                <form method="post" action="{{ url_for('notificaciones.atender_incidencia', incidencia_id=i.id) }}" class="d-inline">
+                  <button type="submit" class="btn btn-sm btn-outline-primary">Marcar atendida</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-center text-muted py-4">No hay incidencias reportadas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

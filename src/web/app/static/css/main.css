@@ -454,6 +454,33 @@ thead.table-light th,
   height: 0.65rem;
 }
 
+/* ---------- Leyendas de las gráficas de dona del Dashboard ---------- */
+.leyenda-punto {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.leyenda-punto--normal {
+  background: #17b8a6;
+}
+
+.leyenda-punto--alarma {
+  background: #dfa524;
+}
+
+.leyenda-punto--critico {
+  background: #bf4a40;
+}
+
+.dona-leyenda {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .contenedor-checklist {
   max-height: 280px;
   overflow-y: auto;

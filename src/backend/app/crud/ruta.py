@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from sqlalchemy.orm import Session, selectinload
 
@@ -126,6 +126,11 @@ class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
         codigo_contenedor escaneado, y lo pasa a estado 'recolectado'.
         Devuelve None si ese contenedor no forma parte de la ruta (para
         que la vista responda 404 en vez de modificar algo fuera de lugar).
+
+        Guarda fecha_recolectado y resetea discrepancia_revisada: la
+        siguiente lectura real del sensor que llegue después de esto es
+        la que se compara contra el umbral (ver
+        crud/notificacion.py::revisar_discrepancia_recoleccion).
         """
         detalle = (
             db.query(DetalleRuta)
@@ -137,6 +142,8 @@ class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
             return None
 
         detalle.id_estado = _estado_id_por_nombre(db, "recolectado")
+        detalle.fecha_recolectado = datetime.utcnow()
+        detalle.discrepancia_revisada = False
         db.add(detalle)
         db.commit()
         db.refresh(detalle)
@@ -154,6 +161,10 @@ class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
         ruta (para pruebas o correcciones desde la web), sin pasar por
         el flujo de escaneo de QR. Devuelve None si ese detalle no
         pertenece a esa ruta, para no modificar algo fuera de lugar.
+
+        Mismo tratamiento de fecha_recolectado/discrepancia_revisada que
+        marcar_recolectado, para que la detección de discrepancias
+        también aplique cuando el admin fuerza el cambio manualmente.
         """
         detalle = (
             db.query(DetalleRuta)
@@ -164,6 +175,13 @@ class CRUDRuta(CRUDBase[Ruta, RutaCreate, RutaUpdate]):
             return None
 
         detalle.id_estado = id_estado
+        nuevo_estado = db.query(Estado).filter(Estado.id == id_estado).first()
+        if nuevo_estado and nuevo_estado.estado == "recolectado":
+            detalle.fecha_recolectado = datetime.utcnow()
+            detalle.discrepancia_revisada = False
+        else:
+            detalle.fecha_recolectado = None
+            detalle.discrepancia_revisada = False
         db.add(detalle)
         db.commit()
         db.refresh(detalle)

@@ -4,34 +4,16 @@
 {% block content %}
 <div class="page-header">
   <h1 class="h3 mb-1">Dashboard</h1>
-  <p class="text-muted mb-0">Indicadores calculados al final del día seleccionado.</p>
+  <p class="text-muted mb-0">Indicadores actuales, calculados al momento.</p>
 </div>
 {% include "_flash_messages.html" %}
-
-<div class="card border-0 shadow-sm mt-4 mb-3">
-  <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
-    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('dashboard.index', fecha=dia_anterior) }}" title="Día anterior">
-      <i class="bi bi-chevron-left"></i>
-    </a>
-    <form method="get" action="{{ url_for('dashboard.index') }}" class="d-flex align-items-center gap-2">
-      <input type="date" name="fecha" class="form-control form-control-sm" value="{{ dia_actual.isoformat() }}" onchange="this.form.submit()">
-    </form>
-    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('dashboard.index', fecha=dia_siguiente) }}" title="Día siguiente">
-      <i class="bi bi-chevron-right"></i>
-    </a>
-    {% if dia_actual.isoformat() != hoy %}
-      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('dashboard.index') }}">Hoy</a>
-    {% endif %}
-    <span class="text-muted small ms-2">Mostrando el corte del {{ dia_actual.strftime('%d/%m/%Y') }}</span>
-  </div>
-</div>
 
 {% if resumen and resumen.contenedores_sin_datos_a_fecha > 0 %}
 <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
   <i class="bi bi-info-circle"></i>
   <div>
     {{ resumen.contenedores_sin_datos_a_fecha }} contenedor{{ 'es' if resumen.contenedores_sin_datos_a_fecha != 1 else '' }}
-    todavía no tenía{{ 's' if resumen.contenedores_sin_datos_a_fecha != 1 else '' }} ninguna lectura de nivel para esta fecha,
+    todavía no tenía{{ 's' if resumen.contenedores_sin_datos_a_fecha != 1 else '' }} ninguna lectura de nivel,
     así que no se incluye{{ 'n' if resumen.contenedores_sin_datos_a_fecha != 1 else '' }} en las gráficas ni en los críticos de abajo.
   </div>
 </div>
@@ -47,9 +29,9 @@
 </div>
 {% else %}
 
-<!-- KPIs -->
+<!-- KPIs generales -->
 <div class="row g-3 mt-1">
-  <div class="col-6 col-lg-3">
+  <div class="col-6 col-lg-4">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
         <div class="text-muted small">Total de contenedores</div>
@@ -57,7 +39,20 @@
       </div>
     </div>
   </div>
-  <div class="col-6 col-lg-3">
+  <div class="col-6 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Recolectores asignados ese día</div>
+        <div class="fs-2 fw-bold">{{ resumen.recolectores_hoy|length }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KPIs de Nivel -->
+<h2 class="h6 text-muted mt-3 mb-2">Nivel</h2>
+<div class="row g-3">
+  <div class="col-6 col-lg-4">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
         <div class="text-muted small">Cerca del llenado (&ge;80%)</div>
@@ -67,58 +62,74 @@
       </div>
     </div>
   </div>
-  <div class="col-6 col-lg-3">
+</div>
+
+<!-- KPIs de Peso -->
+<h2 class="h6 text-muted mt-3 mb-2">Peso</h2>
+<div class="row g-3">
+  <div class="col-6 col-lg-4">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
-        <div class="text-muted small">Recolectores asignados ese día</div>
-        <div class="fs-2 fw-bold">{{ resumen.recolectores_hoy|length }}</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-lg-3">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Zonas monitoreadas</div>
-        <div class="fs-2 fw-bold">{{ resumen.promedio_por_zona|length }}</div>
+        <div class="text-muted small">Cerca de la capacidad máxima (&ge;80%)</div>
+        <div class="fs-2 fw-bold {% if resumen.contenedores_peso_alto > 0 %}text-danger{% endif %}">
+          {{ resumen.contenedores_peso_alto }}
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Gráficas -->
+<!-- Zona (izquierda) + donas de nivel/peso lado a lado, misma altura (derecha) -->
 <div class="row g-3 mt-1">
-  <div class="col-lg-5">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <h2 class="h6">Distribución de llenado</h2>
-        {% if resumen.total_contenedores > 0 %}
-        <canvas id="chartDistribucion" height="220"></canvas>
-        <div class="d-flex justify-content-around small text-muted mt-2">
-          <span><span class="badge bg-success">&nbsp;</span> &lt;50%: {{ resumen.distribucion_nivel.bajo }} ({{ resumen.distribucion_nivel.bajo_pct }}%)</span>
-          <span><span class="badge bg-warning">&nbsp;</span> 50–80%: {{ resumen.distribucion_nivel.medio }} ({{ resumen.distribucion_nivel.medio_pct }}%)</span>
-          <span><span class="badge bg-danger">&nbsp;</span> &gt;80%: {{ resumen.distribucion_nivel.alto }} ({{ resumen.distribucion_nivel.alto_pct }}%)</span>
-        </div>
-        {% else %}
-        <p class="text-muted mb-0">Sin contenedores registrados todavía.</p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-7">
+  <div class="col-lg-8">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
         <h2 class="h6">Promedio de llenado por zona</h2>
         {% if resumen.promedio_por_zona %}
-        <canvas id="chartZonas" height="220"></canvas>
+        <canvas id="chartZonas" height="90"></canvas>
         {% else %}
         <p class="text-muted mb-0">No hay zonas con contenedores registrados.</p>
         {% endif %}
       </div>
     </div>
   </div>
+  <div class="col-lg-4">
+    <div class="d-flex flex-row gap-3 h-100">
+      <div class="card border-0 shadow-sm flex-fill">
+        <div class="card-body">
+          <h2 class="h6 mb-2">Nivel</h2>
+          {% if resumen.total_contenedores > 0 %}
+          <canvas id="chartDistribucionNivel" height="130"></canvas>
+          <div class="dona-leyenda small text-muted mt-2">
+            <span><span class="leyenda-punto leyenda-punto--normal"></span> Normal: {{ resumen.distribucion_nivel.bajo }} ({{ resumen.distribucion_nivel.bajo_pct }}%)</span>
+            <span><span class="leyenda-punto leyenda-punto--alarma"></span> Alarma: {{ resumen.distribucion_nivel.medio }} ({{ resumen.distribucion_nivel.medio_pct }}%)</span>
+            <span><span class="leyenda-punto leyenda-punto--critico"></span> Crítico: {{ resumen.distribucion_nivel.alto }} ({{ resumen.distribucion_nivel.alto_pct }}%)</span>
+          </div>
+          {% else %}
+          <p class="text-muted mb-0">Sin contenedores todavía.</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm flex-fill">
+        <div class="card-body">
+          <h2 class="h6 mb-2">Peso</h2>
+          {% if resumen.total_contenedores > 0 %}
+          <canvas id="chartDistribucionPeso" height="130"></canvas>
+          <div class="dona-leyenda small text-muted mt-2">
+            <span><span class="leyenda-punto leyenda-punto--normal"></span> Normal: {{ resumen.distribucion_peso.bajo }} ({{ resumen.distribucion_peso.bajo_pct }}%)</span>
+            <span><span class="leyenda-punto leyenda-punto--alarma"></span> Alarma: {{ resumen.distribucion_peso.medio }} ({{ resumen.distribucion_peso.medio_pct }}%)</span>
+            <span><span class="leyenda-punto leyenda-punto--critico"></span> Crítico: {{ resumen.distribucion_peso.alto }} ({{ resumen.distribucion_peso.alto_pct }}%)</span>
+          </div>
+          {% else %}
+          <p class="text-muted mb-0">Sin contenedores todavía.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Recolecciones por día de la semana -->
+<!-- Recolecciones por día de la semana (ancho completo) -->
 <div class="row g-3 mt-1">
   <div class="col-12">
     <div class="card border-0 shadow-sm">
@@ -135,9 +146,22 @@
   </div>
 </div>
 
+<!-- Nivel vs peso, normalizados 0-1, últimos 7 días -->
+<div class="row g-3 mt-1">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h2 class="h6">Nivel vs peso (normalizado)</h2>
+        <p class="text-muted small mb-2">Últimos 7 días — promedio diario de nivel y de peso, ambos en escala 0 a 1, para comparar cómo se mueve cada variable.</p>
+        <canvas id="chartTendencia" height="90"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Listas -->
 <div class="row g-3 mt-1 mb-4">
-  <div class="col-lg-6">
+  <div class="col-lg-4">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -171,7 +195,7 @@
       </div>
     </div>
   </div>
-  <div class="col-lg-6">
+  <div class="col-lg-4">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -205,27 +229,79 @@
       </div>
     </div>
   </div>
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="h6 mb-0">Zonas monitoreadas</h2>
+          <span class="small text-muted">{{ resumen.promedio_por_zona|length }}</span>
+        </div>
+        {% if resumen.promedio_por_zona %}
+        <ul class="list-unstyled mb-0">
+          {% for z in resumen.promedio_por_zona %}
+          <li class="d-flex justify-content-between align-items-center py-1 {% if not loop.last %}border-bottom{% endif %}">
+            <span>{{ z.zona }}</span>
+            <span class="badge text-bg-light border">{{ z.total_contenedores }} contenedor{{ 'es' if z.total_contenedores != 1 else '' }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted mb-0">No hay zonas con contenedores registrados.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </div>
+{% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-  {% if resumen.total_contenedores > 0 %}
-  new Chart(document.getElementById('chartDistribucion'), {
+  {% if resumen and resumen.total_contenedores > 0 %}
+  // Colores de marca: los mismos que usan las barras de nivel/peso y los
+  // badges en Contenedores -- para que las gráficas se vean parte del
+  // mismo sistema, no una pieza aparte con los colores por defecto de
+  // Chart.js (verde/amarillo/rojo genéricos de Bootstrap).
+  const COLOR_NORMAL = '#17b8a6';
+  const COLOR_ALARMA = '#dfa524';
+  const COLOR_CRITICO = '#bf4a40';
+
+  const OPCIONES_DONA = {
+    cutout: '68%',
+    plugins: {
+      legend: { display: false }, // la leyenda ya se dibuja abajo del canvas, con el conteo
+    },
+  };
+
+  new Chart(document.getElementById('chartDistribucionNivel'), {
     type: 'doughnut',
     data: {
-      labels: ['< 50%', '50% – 80%', '> 80%'],
+      labels: ['Normal', 'Alarma', 'Crítico'],
       datasets: [{
         data: [{{ resumen.distribucion_nivel.bajo }}, {{ resumen.distribucion_nivel.medio }}, {{ resumen.distribucion_nivel.alto }}],
-        backgroundColor: ['#198754', '#ffc107', '#dc3545'],
+        backgroundColor: [COLOR_NORMAL, COLOR_ALARMA, COLOR_CRITICO],
+        borderColor: '#ffffff',
+        borderWidth: 2,
       }],
     },
-    options: {
-      plugins: { legend: { position: 'bottom' } },
+    options: OPCIONES_DONA,
+  });
+
+  new Chart(document.getElementById('chartDistribucionPeso'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Normal', 'Alarma', 'Crítico'],
+      datasets: [{
+        data: [{{ resumen.distribucion_peso.bajo }}, {{ resumen.distribucion_peso.medio }}, {{ resumen.distribucion_peso.alto }}],
+        backgroundColor: [COLOR_NORMAL, COLOR_ALARMA, COLOR_CRITICO],
+        borderColor: '#ffffff',
+        borderWidth: 2,
+      }],
     },
+    options: OPCIONES_DONA,
   });
   {% endif %}
 
-  {% if resumen.promedio_por_zona %}
+  {% if resumen and resumen.promedio_por_zona %}
   new Chart(document.getElementById('chartZonas'), {
     type: 'bar',
     data: {
@@ -233,7 +309,9 @@
       datasets: [{
         label: 'Promedio de llenado (%)',
         data: [{% for z in resumen.promedio_por_zona %}{{ z.promedio_nivel }},{% endfor %}],
-        backgroundColor: '#2e7d32',
+        backgroundColor: '#127a6c',
+        borderRadius: 6,
+        maxBarThickness: 48,
       }],
     },
     options: {
@@ -243,7 +321,7 @@
   });
   {% endif %}
 
-  {% if resumen.recolecciones_por_dia_semana and resumen.recolecciones_por_dia_semana|sum(attribute='total') > 0 %}
+  {% if resumen and resumen.recolecciones_por_dia_semana and resumen.recolecciones_por_dia_semana|sum(attribute='total') > 0 %}
   new Chart(document.getElementById('chartDiaSemana'), {
     type: 'bar',
     data: {
@@ -251,7 +329,9 @@
       datasets: [{
         label: 'Recolecciones',
         data: [{% for d in resumen.recolecciones_por_dia_semana %}{{ d.total }},{% endfor %}],
-        backgroundColor: '#1565c0',
+        backgroundColor: '#17b8a6',
+        borderRadius: 6,
+        maxBarThickness: 48,
       }],
     },
     options: {
@@ -260,7 +340,36 @@
     },
   });
   {% endif %}
-</script>
 
-{% endif %}
+  {% if resumen and resumen.tendencia_7_dias %}
+  new Chart(document.getElementById('chartTendencia'), {
+    type: 'line',
+    data: {
+      labels: [{% for t in resumen.tendencia_7_dias %}{{ t.etiqueta|tojson }},{% endfor %}],
+      datasets: [
+        {
+          label: 'Nivel (promedio)',
+          data: [{% for t in resumen.tendencia_7_dias %}{{ t.promedio_nivel|tojson }},{% endfor %}],
+          borderColor: '#127a6c',
+          backgroundColor: '#127a6c',
+          tension: 0.3,
+          spanGaps: false,
+        },
+        {
+          label: 'Peso (promedio)',
+          data: [{% for t in resumen.tendencia_7_dias %}{{ t.promedio_peso|tojson }},{% endfor %}],
+          borderColor: '#dfa524',
+          backgroundColor: '#dfa524',
+          tension: 0.3,
+          spanGaps: false,
+        },
+      ],
+    },
+    options: {
+      scales: { y: { beginAtZero: true, max: 1 } },
+      plugins: { legend: { position: 'bottom' } },
+    },
+  });
+  {% endif %}
+</script>
 {% endblock %}
