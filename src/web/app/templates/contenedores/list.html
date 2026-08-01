@@ -20,7 +20,6 @@
         <tr>
           <th>ID</th>
           <th>Nombre</th>
-          <th>QR</th>
           <th>Sector (Zona/Sector)</th>
           <th>Capacidad</th>
           <th>Nivel actual</th>
@@ -35,11 +34,6 @@
         <tr>
           <td><code>{{ c.codigo_contenedor }}</code></td>
           <td>{{ c.nombre }}</td>
-          <td>
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalQr{{ c.id }}">
-              <i class="bi bi-qr-code"></i> Ver QR
-            </button>
-          </td>
           <td>{{ c.sector.zona.nombre }} / {{ c.sector.nombre }}</td>
           <td>
             {{ c.capacidad_max }} Kg
@@ -71,13 +65,14 @@
             </form>
           </td>
           <td class="text-end">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalContenedorVer{{ c.id }}">Ver</button>
             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalContenedorEditar{{ c.id }}">Editar</button>
             <form method="post" action="{{ url_for('contenedores.eliminar', contenedor_id=c.id) }}" class="d-none" id="form-eliminar-contenedor-{{ c.id }}"></form>
             <button type="button" class="btn btn-sm btn-outline-danger" data-confirm-delete="form-eliminar-contenedor-{{ c.id }}" data-confirm-nombre="el contenedor &quot;{{ c.nombre }}&quot;">Eliminar</button>
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="9" class="text-center text-muted py-4">No hay contenedores registrados.</td></tr>
+        <tr><td colspan="8" class="text-center text-muted py-4">No hay contenedores registrados.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -136,18 +131,94 @@
 </div>
 
 {% for c in contenedores %}
-<div class="modal fade" id="modalQr{{ c.id }}" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-sm">
+{% set nivel = c.nivel_actual|float %}
+{% set peso = c.peso_actual|float %}
+{% set capacidad = c.capacidad_max|float %}
+{% set peso_pct_real = (peso / capacidad * 100) if capacidad > 0 else 0 %}
+{% set peso_pct_barra = peso_pct_real if peso_pct_real < 100 else 100 %}
+{% set peso_critico = peso_pct_real >= 100 %}
+
+<div class="modal fade" id="modalContenedorVer{{ c.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title fs-5">QR — {{ c.nombre }}</h2>
+        <h2 class="modal-title fs-5">{{ c.nombre }}</h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
-      <div class="modal-body text-center">
-        <img src="{{ url_for('contenedores.qr_png', contenedor_id=c.id) }}" alt="QR {{ c.codigo_contenedor }}" class="img-fluid">
+      <div class="modal-body">
+        <div class="row g-4">
+          <div class="col-md-4 text-center">
+            <img src="{{ url_for('contenedores.qr_png', contenedor_id=c.id) }}" alt="QR {{ c.codigo_contenedor }}" class="img-fluid border rounded p-2">
+            <a class="btn btn-sm btn-outline-primary mt-2 w-100" href="{{ url_for('contenedores.qr_png', contenedor_id=c.id, download=1) }}">Descargar QR</a>
+          </div>
+          <div class="col-md-8">
+            <table class="table table-sm mb-0">
+              <tbody>
+                <tr>
+                  <th class="text-muted fw-normal" style="width: 40%;">Código</th>
+                  <td><code>{{ c.codigo_contenedor }}</code></td>
+                </tr>
+                <tr>
+                  <th class="text-muted fw-normal">Sector</th>
+                  <td>{{ c.sector.zona.nombre }} / {{ c.sector.nombre }}</td>
+                </tr>
+                <tr>
+                  <th class="text-muted fw-normal">Capacidad máxima</th>
+                  <td>{{ c.capacidad_max }} Kg</td>
+                </tr>
+                <tr>
+                  <th class="text-muted fw-normal">Altura del sensor</th>
+                  <td>
+                    {% if c.altura_cm is none %}
+                    <span class="badge bg-warning text-dark">Sin configurar</span>
+                    {% else %}
+                    {{ c.altura_cm }} cm
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <th class="text-muted fw-normal">Estado</th>
+                  <td>
+                    {% if c.estado.estado|lower == 'activo' %}
+                    <span class="badge bg-success">Activo</span>
+                    {% else %}
+                    <span class="badge text-bg-secondary">Inactivo</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
+              <span class="small fw-semibold text-muted">Nivel de llenado</span>
+              <span class="small fw-semibold">{{ nivel }}%</span>
+            </div>
+            <div class="progress nivel-bar">
+              <div class="progress-bar {% if nivel >= 80 %}bg-danger{% elif nivel >= 50 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ nivel }}%"></div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
+              <span class="small fw-semibold text-muted">
+                Peso actual
+                {% if peso_critico %}<span class="badge bg-danger ms-1">Crítico</span>{% endif %}
+              </span>
+              <span class="small fw-semibold">{{ peso }} / {{ c.capacidad_max }} Kg</span>
+            </div>
+            <div class="progress nivel-bar">
+              <div class="progress-bar {% if peso_critico %}bg-danger{% elif peso_pct_real >= 50 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ peso_pct_barra }}%"></div>
+            </div>
+            {% if peso_critico %}
+            <div class="form-text text-danger">El peso registrado alcanzó o superó la capacidad máxima del contenedor.</div>
+            {% endif %}
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
-        <a class="btn btn-outline-primary" href="{{ url_for('contenedores.qr_png', contenedor_id=c.id, download=1) }}">Descargar</a>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
