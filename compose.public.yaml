@@ -34,8 +34,13 @@ services:
       # pruebas. Producción: la IP/dominio público real de esta VM.
       GF_SERVER_ROOT_URL: https://${PUBLIC_HOST_IP:-192.168.10.102}/grafana/
       GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      # La misma variable que usa HAProxy -- el datasource de Prometheus
+      # provisionado (ver grafana/provisioning/datasources/prometheus.yml)
+      # la usa para saber dónde vive Prometheus (host privado).
+      PRIVATE_HOST_IP: ${PRIVATE_HOST_IP:-host.docker.internal}
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
     expose:
       - "3000"
     networks:

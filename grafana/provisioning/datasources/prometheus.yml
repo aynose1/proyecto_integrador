@@ -1,0 +1,14 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    # ${PRIVATE_HOST_IP} lo expande Grafana solo al leer este archivo
+    # (soporte nativo de variables de entorno en provisioning, no
+    # necesita envsubst como haproxy.cfg). Mismo valor que ya usas para
+    # HAProxy: host.docker.internal en local, la IP privada real de la
+    # VM del backend en producción.
+    url: http://${PRIVATE_HOST_IP}:9090
+    isDefault: true
+    editable: true
