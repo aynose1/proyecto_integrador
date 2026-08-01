@@ -157,6 +157,29 @@ a:hover {
 }
 
 /* ---------- Tablas ---------- */
+/* Esquinas redondeadas: la tarjeta que envuelve la tabla ya tiene
+   border-radius, pero la tabla en sí tiene esquinas cuadradas por
+   dentro -- "overflow: hidden" en la tarjeta hace que el contenido se
+   recorte siguiendo el redondeo del contenedor. :has() aplica esto
+   solo a tarjetas que envuelven una tabla, no a todas las .card
+   (dashboard, reportes, etc. no deben quedar recortadas). */
+.card:has(.table-responsive) {
+  overflow: hidden;
+}
+
+.table {
+  /* Bootstrap usa un gris genérico por defecto para las líneas
+     divisorias; se cambia por el mismo tono suave que ya usan las
+     tarjetas, para que no se sienta una tabla "aparte" del resto. */
+  --bs-table-border-color: var(--border-soft);
+  margin-bottom: 0;
+}
+
+.table > :not(caption) > * > * {
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+}
+
 .table-light,
 thead.table-light th,
 .table > :not(caption) > * > .table-light {
@@ -166,6 +189,7 @@ thead.table-light th,
   text-transform: uppercase;
   letter-spacing: 0.045em;
   font-weight: 700;
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .table-hover > tbody > tr:hover > * {
