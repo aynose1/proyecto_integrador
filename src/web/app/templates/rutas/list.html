@@ -31,8 +31,13 @@
       <span class="text-muted small ms-2">Mostrando rutas del {{ dia_actual.strftime('%d/%m/%Y') }}</span>
     {% else %}
       <span class="text-muted small">Mostrando rutas de todas las fechas</span>
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('rutas.listar') }}">
+        <i class="bi bi-calendar3"></i> Volver a hoy
+      </a>
     {% endif %}
-    <a class="btn btn-sm btn-link ms-auto" href="{{ url_for('rutas.listar', fecha='todas') }}">Ver todas las fechas</a>
+    <a class="btn btn-sm {% if not dia_actual %}btn-primary{% else %}btn-outline-secondary{% endif %} ms-auto" href="{{ url_for('rutas.listar', fecha='todas') }}">
+      <i class="bi bi-calendar-range"></i> Todas las fechas
+    </a>
   </div>
 </div>
 
@@ -209,6 +214,7 @@
                 <th>ID</th>
                 <th>Contenedor</th>
                 <th>Nivel</th>
+                <th>Peso</th>
                 <th>Estado</th>
               </tr>
             </thead>
@@ -221,6 +227,7 @@
                 <td><code>{{ c.codigo_contenedor }}</code></td>
                 <td>{{ c.nombre }}</td>
                 <td>{{ nivel }}%</td>
+                <td>{{ c.peso_actual }} Kg</td>
                 <td>
                   <select name="estado_detalle_{{ detalle.id }}" class="form-select form-select-sm" style="width: auto; display: inline-block;">
                     {% for e in estados_detalle %}
@@ -230,7 +237,7 @@
                 </td>
               </tr>
               {% else %}
-              <tr><td colspan="5" class="text-muted text-center">Sin contenedores</td></tr>
+              <tr><td colspan="6" class="text-muted text-center">Sin contenedores</td></tr>
               {% endfor %}
             </tbody>
           </table>
