@@ -101,7 +101,21 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body">
-        <input type="text" class="form-control mb-3" id="buscadorContenedores" placeholder="Buscar por nombre, código o sector...">
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <input type="text" class="form-control" id="buscadorContenedores" placeholder="Buscar por nombre o código...">
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filtroZona">
+              <option value="">Todas las zonas</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filtroSector">
+              <option value="">Todos los sectores</option>
+            </select>
+          </div>
+        </div>
         <div class="row row-cols-2 row-cols-md-3 g-3" id="gridContenedores"></div>
         <p class="text-muted text-center py-4 d-none" id="sinResultadosContenedores">No se encontraron contenedores.</p>
       </div>
@@ -399,8 +413,11 @@ function renderizarGridSelector(contexto) {
     const activo = c.estado && c.estado.estado === 'activo';
     const enRuta = yaEnRuta.has(String(c.id));
     const deshabilitado = !activo || enRuta;
-    const sectorTexto = c.sector ? `${c.sector.zona.nombre} / ${c.sector.nombre}` : '';
-    const buscar = `${c.nombre} ${c.codigo_contenedor} ${sectorTexto}`.toLowerCase();
+    const zonaId = c.sector ? c.sector.zona.id : '';
+    const zonaNombre = c.sector ? c.sector.zona.nombre : '';
+    const sectorId = c.sector ? c.sector.id : '';
+    const sectorNombre = c.sector ? c.sector.nombre : '';
+    const buscarTexto = `${c.nombre} ${c.codigo_contenedor}`.toLowerCase();
 
     let etiqueta = '';
     if (!activo) {
@@ -410,7 +427,7 @@ function renderizarGridSelector(contexto) {
     }
 
     return `
-      <div class="col contenedor-selec-item" data-buscar="${buscar}">
+      <div class="col contenedor-selec-item" data-buscar="${buscarTexto}" data-zona="${zonaId}" data-sector="${sectorId}">
         <label class="card h-100 tarjeta-contenedor-selec ${deshabilitado ? 'tarjeta-contenedor-selec--disabled' : ''}">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -419,7 +436,7 @@ function renderizarGridSelector(contexto) {
             </div>
             <div class="fw-semibold">${c.nombre}</div>
             <div class="small text-muted"><code>${c.codigo_contenedor}</code></div>
-            <div class="small text-muted">${sectorTexto}</div>
+            <div class="small text-muted">${zonaNombre} / ${sectorNombre}</div>
             <div class="small mt-1">Nivel: ${c.nivel_actual}%</div>
           </div>
         </label>
@@ -438,22 +455,69 @@ function renderizarGridSelector(contexto) {
     });
   });
 
+  poblarFiltrosZonaSector();
   aplicarBusquedaSelector();
 }
 
+// Arma las opciones de los selects de Zona/Sector a partir de los
+// contenedores mismos (no hace falta pedirle zonas/sectores al backend
+// aparte). El de Sector se acota a los que pertenecen a la zona elegida
+// cuando hay una zona seleccionada (filtro en cascada).
+function poblarFiltrosZonaSector() {
+  const selectZona = document.getElementById('filtroZona');
+  const selectSector = document.getElementById('filtroSector');
+  const zonaElegida = selectZona.value;
+
+  const zonas = new Map();
+  const sectores = new Map();
+  CONTENEDORES_DATA.forEach(c => {
+    if (!c.sector) return;
+    zonas.set(String(c.sector.zona.id), c.sector.zona.nombre);
+    if (!zonaElegida || String(c.sector.zona.id) === zonaElegida) {
+      sectores.set(String(c.sector.id), c.sector.nombre);
+    }
+  });
+
+  if (!selectZona.dataset.poblado) {
+    selectZona.insertAdjacentHTML(
+      'beforeend',
+      Array.from(zonas.entries()).sort((a, b) => a[1].localeCompare(b[1])).map(([id, nombre]) => `<option value="${id}">${nombre}</option>`).join('')
+    );
+    selectZona.dataset.poblado = '1';
+  }
+
+  const sectorSeleccionadoPrevio = selectSector.value;
+  selectSector.innerHTML = '<option value="">Todos los sectores</option>' +
+    Array.from(sectores.entries()).sort((a, b) => a[1].localeCompare(b[1])).map(([id, nombre]) => `<option value="${id}">${nombre}</option>`).join('');
+  if (sectores.has(sectorSeleccionadoPrevio)) {
+    selectSector.value = sectorSeleccionadoPrevio;
+  }
+}
+
 function aplicarBusquedaSelector() {
-  const buscador = document.getElementById('buscadorContenedores');
-  const texto = (buscador.value || '').toLowerCase().trim();
+  const texto = (document.getElementById('buscadorContenedores').value || '').toLowerCase().trim();
+  const zona = document.getElementById('filtroZona').value;
+  const sector = document.getElementById('filtroSector').value;
+
   const items = document.querySelectorAll('#gridContenedores .contenedor-selec-item');
   let visibles = 0;
   items.forEach(item => {
-    const coincide = !texto || item.dataset.buscar.includes(texto);
+    const coincideTexto = !texto || item.dataset.buscar.includes(texto);
+    const coincideZona = !zona || item.dataset.zona === zona;
+    const coincideSector = !sector || item.dataset.sector === sector;
+    const coincide = coincideTexto && coincideZona && coincideSector;
     item.classList.toggle('d-none', !coincide);
     if (coincide) visibles++;
   });
   document.getElementById('sinResultadosContenedores').classList.toggle('d-none', visibles > 0);
 }
 document.getElementById('buscadorContenedores').addEventListener('input', aplicarBusquedaSelector);
+document.getElementById('filtroZona').addEventListener('change', function () {
+  poblarFiltrosZonaSector();
+  document.getElementById('filtroSector').value = '';
+  aplicarBusquedaSelector();
+});
+document.getElementById('filtroSector').addEventListener('change', aplicarBusquedaSelector);
 
 // Abrir el selector: oculta el modal de la ruta (crear o editar) y,
 // cuando termina de ocultarse del todo, muestra el selector — evitar
@@ -462,6 +526,8 @@ window.abrirSelectorContenedores = function (contexto) {
   contextoActivo = contexto;
   ordenClicsPicker = [];
   document.getElementById('buscadorContenedores').value = '';
+  document.getElementById('filtroZona').value = '';
+  document.getElementById('filtroSector').value = '';
 
   const modalOrigenId = contexto === 'nueva' ? 'modalRutaNueva' : `modalRutaEditar${contexto}`;
   const modalOrigen = document.getElementById(modalOrigenId);
