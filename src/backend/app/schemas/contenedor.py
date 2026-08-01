@@ -35,6 +35,9 @@ class ContenedorRead(ContenedorBase):
     # Puede ser None en contenedores creados antes de este cambio, hasta
     # que el administrador la capture desde la web.
     altura_cm: Decimal | None
+    # Última lectura del sensor de peso (Kg). No requiere calibración
+    # previa como altura_cm — arranca en 0 hasta la primera lectura real.
+    peso_actual: Decimal
     sector: SectorRead
     estado: EstadoRead
 
@@ -46,4 +49,5 @@ class ContenedorSummary(BaseModel):
     nombre: str
     codigo_contenedor: str
     nivel_actual: Decimal
+    peso_actual: Decimal
     capacidad_max: Decimal

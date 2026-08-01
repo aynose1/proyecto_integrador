@@ -8,6 +8,7 @@ from app.api.routes import (
     incidencias,
     notificaciones,
     registros_nivel,
+    registros_peso,
     rutas,
     sectores,
     usuarios,
@@ -20,6 +21,7 @@ api_router.include_router(usuarios.router)
 api_router.include_router(contenedores.router)
 api_router.include_router(rutas.router)
 api_router.include_router(registros_nivel.router)
+api_router.include_router(registros_peso.router)
 api_router.include_router(incidencias.router)
 api_router.include_router(notificaciones.router)
 api_router.include_router(zonas.router)

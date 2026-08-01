@@ -26,9 +26,19 @@ class Contenedor(Base):
     # el registro más reciente de RegistroNivel en cada consulta.
     nivel_actual: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=0)
 
+    # Mismo patrón que nivel_actual, pero para el sensor de peso
+    # (celda de carga): siempre refleja la lectura más reciente de
+    # RegistroPeso. No necesita ninguna calibración propia (a diferencia
+    # de altura_cm) porque el sensor ya manda el peso del contenido
+    # directo, sin tara que resolver aquí.
+    peso_actual: Mapped[float] = mapped_column(Numeric(7, 2), nullable=False, default=0)
+
     sector = relationship("Sector")
     estado = relationship("Estado")
     registros_nivel = relationship(
         "RegistroNivel", back_populates="contenedor", order_by="RegistroNivel.fecha_hora.desc()"
+    )
+    registros_peso = relationship(
+        "RegistroPeso", back_populates="contenedor", order_by="RegistroPeso.fecha_hora.desc()"
     )
     incidencias = relationship("Incidencia", back_populates="contenedor")

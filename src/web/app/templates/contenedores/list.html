@@ -24,6 +24,7 @@
           <th>Sector (Zona/Sector)</th>
           <th>Capacidad</th>
           <th>Nivel actual</th>
+          <th>Peso actual</th>
           <th>Estado</th>
           <th class="text-end">Acciones</th>
         </tr>
@@ -54,6 +55,7 @@
               <span class="small fw-semibold">{{ nivel }}%</span>
             </div>
           </td>
+          <td>{{ c.peso_actual }} Kg</td>
           <td>
             <form method="post" action="{{ url_for('contenedores.cambiar_estado', contenedor_id=c.id) }}" class="d-inline">
               {% set es_activo = c.estado.estado|lower == 'activo' %}
@@ -75,7 +77,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="8" class="text-center text-muted py-4">No hay contenedores registrados.</td></tr>
+        <tr><td colspan="9" class="text-center text-muted py-4">No hay contenedores registrados.</td></tr>
         {% endfor %}
       </tbody>
     </table>
