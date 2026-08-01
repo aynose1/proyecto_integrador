@@ -80,6 +80,7 @@
         <div class="mb-3">
           <label class="form-label" for="u_contrasena">Contraseña</label>
           <input type="password" class="form-control" id="u_contrasena" name="contrasena" required minlength="8">
+          <div class="form-text">Mínimo 8 caracteres.</div>
         </div>
       </div>
       <div class="modal-footer">
@@ -100,6 +101,11 @@
       </div>
       <div class="modal-body">
         <div class="mb-3">
+          <label class="form-label">Código de usuario</label>
+          <input type="text" class="form-control" value="{{ u.codigo_usuario }}" disabled>
+          <div class="form-text">No se puede cambiar una vez creado el usuario.</div>
+        </div>
+        <div class="mb-3">
           <label class="form-label" for="ue_nombre_{{ u.id }}">Nombre</label>
           <input type="text" class="form-control" id="ue_nombre_{{ u.id }}" name="nombre" required maxlength="100" value="{{ u.nombre }}">
         </div>
@@ -110,6 +116,19 @@
         <div class="mb-3">
           <label class="form-label" for="ue_apellido_materno_{{ u.id }}">Apellido materno</label>
           <input type="text" class="form-control" id="ue_apellido_materno_{{ u.id }}" name="apellido_materno" maxlength="100" value="{{ u.apellido_materno or '' }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="ue_tipo_{{ u.id }}">Tipo de usuario</label>
+          <select class="form-select" id="ue_tipo_{{ u.id }}" name="id_tipo_usuario" required>
+            {% for t in tipos_usuario %}
+            <option value="{{ t.id }}" {% if u.tipo_usuario.id == t.id %}selected{% endif %}>{{ t.tipo|capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="ue_contrasena_{{ u.id }}">Nueva contraseña</label>
+          <input type="password" class="form-control" id="ue_contrasena_{{ u.id }}" name="contrasena" minlength="8" placeholder="Dejar en blanco para no cambiarla">
+          <div class="form-text">Solo llénalo si quieres restablecer la contraseña de este usuario.</div>
         </div>
       </div>
       <div class="modal-footer">
