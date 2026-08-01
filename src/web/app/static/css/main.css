@@ -460,6 +460,25 @@ thead.table-light th,
   background: var(--page-bg);
 }
 
+/* ---------- Tarjetas del selector de contenedores (modal "Agregar
+   contenedores" en Rutas) ---------- */
+.tarjeta-contenedor-selec {
+  cursor: pointer;
+  border: 1px solid var(--border-soft);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.tarjeta-contenedor-selec:has(input:checked) {
+  border-color: var(--brand-teal-700);
+  background-color: var(--brand-aqua-100);
+}
+
+.tarjeta-contenedor-selec--disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background-color: var(--page-bg);
+}
+
 .nav-tabs .nav-link {
   color: var(--ink-600);
 }
