@@ -10,19 +10,25 @@ bp = Blueprint("ubicaciones", __name__, url_prefix="/ubicaciones")
 @admin_required
 def listar():
     tab = request.args.get("tab", "zonas")
-    if tab not in {"zonas", "sectores"}:
+    if tab not in {"zonas", "sectores", "mapa"}:
         tab = "zonas"
     try:
         sectores = api_request("get", "/sectores")
         zonas = api_request("get", "/zonas")
+        # Necesarios para calcular el "peor caso" (nivel/peso) de cada
+        # sector en la pestaña Mapa -- ver contenedoresPorSector() en
+        # ubicaciones/list.html.
+        contenedores = api_request("get", "/contenedores")
     except APIError as exc:
         flash(exc.message, "danger")
         sectores = []
         zonas = []
+        contenedores = []
     return render_template(
         "ubicaciones/list.html",
         sectores=sectores,
         zonas=zonas,
+        contenedores=contenedores,
         tab=tab,
     )
 
@@ -62,6 +68,14 @@ def eliminar_zona(zona_id: int):
     return redirect(url_for("ubicaciones.listar", tab="zonas"))
 
 
+def _coordenada_opcional(nombre_campo: str):
+    """Los inputs hidden de lat/lon llegan vacíos si nunca se dio clic
+    en el mapa -- no se manda la llave en absoluto en ese caso, para
+    que la API no intente convertir '' a número."""
+    valor = request.form.get(nombre_campo, "").strip()
+    return float(valor) if valor else None
+
+
 @bp.route("/sectores/nuevo", methods=["POST"])
 @admin_required
 def crear_sector():
@@ -69,6 +83,11 @@ def crear_sector():
         "nombre": request.form["nombre"].strip(),
         "id_zona": int(request.form["id_zona"]),
     }
+    lat = _coordenada_opcional("latitud")
+    lon = _coordenada_opcional("longitud")
+    if lat is not None and lon is not None:
+        payload["latitud"] = lat
+        payload["longitud"] = lon
     try:
         api_request("post", "/sectores", data=payload)
         flash("Sector creado.", "success")
@@ -84,6 +103,11 @@ def editar_sector(sector_id: int):
         "nombre": request.form["nombre"].strip(),
         "id_zona": int(request.form["id_zona"]),
     }
+    lat = _coordenada_opcional("latitud")
+    lon = _coordenada_opcional("longitud")
+    if lat is not None and lon is not None:
+        payload["latitud"] = lat
+        payload["longitud"] = lon
     try:
         api_request("put", f"/sectores/{sector_id}", data=payload)
         flash("Sector actualizado.", "success")

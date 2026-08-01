@@ -13,6 +13,7 @@
     <nav class="nav nav-tabs nav-fill" role="tablist" style="margin: -1px -1px 0 -1px;">
       <button class="nav-link {% if tab == 'zonas' %}active{% endif %}" id="tab-zonas-btn" data-bs-toggle="tab" data-bs-target="#tab-zonas" type="button" role="tab">Zonas</button>
       <button class="nav-link {% if tab == 'sectores' %}active{% endif %}" id="tab-sectores-btn" data-bs-toggle="tab" data-bs-target="#tab-sectores" type="button" role="tab">Sectores</button>
+      <button class="nav-link {% if tab == 'mapa' %}active{% endif %}" id="tab-mapa-btn" data-bs-toggle="tab" data-bs-target="#tab-mapa" type="button" role="tab">Mapa</button>
     </nav>
   </div>
 
@@ -64,6 +65,7 @@
               <tr>
                 <th>Nombre</th>
                 <th>Zona</th>
+                <th>Ubicación</th>
                 <th class="text-end">Acciones</th>
               </tr>
             </thead>
@@ -72,6 +74,13 @@
               <tr>
                 <td>{{ s.nombre }}</td>
                 <td>{{ s.zona.nombre }}</td>
+                <td>
+                  {% if s.latitud is not none and s.longitud is not none %}
+                  <span class="badge bg-success"><i class="bi bi-geo-alt"></i> Ubicado</span>
+                  {% else %}
+                  <span class="badge bg-secondary">Sin ubicar</span>
+                  {% endif %}
+                </td>
                 <td class="text-end">
                   <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalSectorEditar{{ s.id }}">Editar</button>
                   <form method="post" action="{{ url_for('ubicaciones.eliminar_sector', sector_id=s.id) }}" class="d-none" id="form-eliminar-sector-{{ s.id }}"></form>
@@ -79,11 +88,26 @@
                 </td>
               </tr>
               {% else %}
-              <tr><td colspan="3" class="text-center text-muted py-4">No hay sectores registrados.</td></tr>
+              <tr><td colspan="4" class="text-center text-muted py-4">No hay sectores registrados.</td></tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    {# ========== MAPA ========== #}
+    <div class="tab-pane fade {% if tab == 'mapa' %}show active{% endif %}" id="tab-mapa" role="tabpanel">
+      <div class="p-4">
+        <div class="d-flex gap-3 mb-3 small text-muted">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#17b8a6;margin-right:4px;"></span>Bajo</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dfa524;margin-right:4px;"></span>Medio</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#bf4a40;margin-right:4px;"></span>Crítico</span>
+        </div>
+        <div id="mapaSectores" style="height:480px;border-radius:8px;"></div>
+        {% if sectores|selectattr('latitud', 'ne', none)|list|length == 0 %}
+        <p class="text-muted text-center mt-3 mb-0">Ningún sector tiene ubicación capturada todavía. Edita un sector y da clic en "Ubicar en el mapa".</p>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -156,6 +180,17 @@
               {% endfor %}
             </select>
           </div>
+          <div class="col-12">
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#mapaCapturaNuevo">
+              <i class="bi bi-geo-alt"></i> Ubicar en el mapa
+            </button>
+            <div class="collapse mt-2" id="mapaCapturaNuevo">
+              <div id="lienzoMapaNuevo" style="height:260px;border-radius:8px;"></div>
+              <div class="form-text">Da clic en el mapa para marcar la ubicación del sector.</div>
+            </div>
+            <input type="hidden" name="latitud" id="s_lat">
+            <input type="hidden" name="longitud" id="s_lon">
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -188,6 +223,17 @@
               {% endfor %}
             </select>
           </div>
+          <div class="col-12">
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#mapaCapturaEditar{{ s.id }}">
+              <i class="bi bi-geo-alt"></i> {% if s.latitud is not none %}Cambiar ubicación{% else %}Ubicar en el mapa{% endif %}
+            </button>
+            <div class="collapse mt-2" id="mapaCapturaEditar{{ s.id }}">
+              <div id="lienzoMapaEditar{{ s.id }}" style="height:260px;border-radius:8px;"></div>
+              <div class="form-text">Da clic en el mapa para marcar/cambiar la ubicación del sector.</div>
+            </div>
+            <input type="hidden" name="latitud" id="se_lat_{{ s.id }}" value="{{ s.latitud if s.latitud is not none else '' }}">
+            <input type="hidden" name="longitud" id="se_lon_{{ s.id }}" value="{{ s.longitud if s.longitud is not none else '' }}">
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -198,4 +244,86 @@
   </div>
 </div>
 {% endfor %}
+
+<script>
+  const CONTENEDORES_UBIC = {{ contenedores|tojson }};
+  const SECTORES_UBIC = {{ sectores|tojson }};
+
+  // ---------- Captura de ubicación (mapa dentro de Nuevo/Editar sector) ----------
+  const mapasCaptura = {};
+
+  function inicializarCapturaMapa(mapaId, latInputId, lonInputId, latInicial, lonInicial) {
+    if (mapasCaptura[mapaId]) {
+      mapasCaptura[mapaId].invalidateSize();
+      return;
+    }
+
+    const centro = (latInicial != null && lonInicial != null) ? [latInicial, lonInicial] : [20.5888, -100.3899];
+    const mapa = L.map(mapaId).setView(centro, (latInicial != null) ? 16 : 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap',
+    }).addTo(mapa);
+
+    let marcador = null;
+    if (latInicial != null && lonInicial != null) {
+      marcador = L.marker(centro, { icon: crearIconoPin('bajo') }).addTo(mapa);
+    }
+
+    mapa.on('click', function (e) {
+      if (marcador) marcador.remove();
+      marcador = L.marker(e.latlng, { icon: crearIconoPin('bajo') }).addTo(mapa);
+      document.getElementById(latInputId).value = e.latlng.lat.toFixed(7);
+      document.getElementById(lonInputId).value = e.latlng.lng.toFixed(7);
+    });
+
+    mapasCaptura[mapaId] = mapa;
+  }
+
+  document.getElementById('mapaCapturaNuevo').addEventListener('shown.bs.collapse', function () {
+    inicializarCapturaMapa('lienzoMapaNuevo', 's_lat', 's_lon', null, null);
+  });
+
+  {% for s in sectores %}
+  document.getElementById('mapaCapturaEditar{{ s.id }}').addEventListener('shown.bs.collapse', function () {
+    inicializarCapturaMapa(
+      'lienzoMapaEditar{{ s.id }}',
+      'se_lat_{{ s.id }}',
+      'se_lon_{{ s.id }}',
+      {{ s.latitud if s.latitud is not none else 'null' }},
+      {{ s.longitud if s.longitud is not none else 'null' }}
+    );
+  });
+  {% endfor %}
+
+  // ---------- Mapa general de sectores (pestaña "Mapa") ----------
+  let mapaSectoresInstancia = null;
+  function inicializarMapaSectores() {
+    if (mapaSectoresInstancia) {
+      mapaSectoresInstancia.invalidateSize();
+      return;
+    }
+    mapaSectoresInstancia = L.map('mapaSectores').setView([20.5888, -100.3899], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap',
+    }).addTo(mapaSectoresInstancia);
+
+    const puntos = [];
+    SECTORES_UBIC.forEach(function (s) {
+      if (s.latitud == null || s.longitud == null) return;
+      const suyos = CONTENEDORES_UBIC.filter(function (c) { return c.sector && c.sector.id === s.id; });
+      const estado = peorCasoDe(suyos);
+      const marker = L.marker([s.latitud, s.longitud], { icon: crearIconoPin(estado) }).addTo(mapaSectoresInstancia);
+      marker.bindPopup('<strong>' + s.nombre + '</strong><br>' + s.zona.nombre + '<br>' + suyos.length + ' contenedor(es)');
+      puntos.push([s.latitud, s.longitud]);
+    });
+    if (puntos.length > 0) {
+      mapaSectoresInstancia.fitBounds(puntos, { padding: [30, 30], maxZoom: 16 });
+    }
+  }
+
+  document.getElementById('tab-mapa-btn').addEventListener('shown.bs.tab', inicializarMapaSectores);
+  if (document.getElementById('tab-mapa-btn').classList.contains('active')) {
+    document.addEventListener('DOMContentLoaded', inicializarMapaSectores);
+  }
+</script>
 {% endblock %}

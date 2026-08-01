@@ -198,6 +198,7 @@
       </div>
       <div class="modal-body">
         <p class="text-muted">Fecha {{ r.fecha }} · Recolector ID {{ r.id_usuario }}</p>
+        <div id="mapaRutaVer{{ r.id }}" style="height:280px;border-radius:8px;margin-bottom:1rem;"></div>
         <form method="post" action="{{ url_for('rutas.confirmar_estados_detalle', ruta_id=r.id) }}" id="formEstados{{ r.id }}">
         <div class="table-responsive">
           <table class="table align-middle mb-0">
@@ -579,6 +580,83 @@ document.getElementById('modalSeleccionarContenedores').addEventListener('hidden
 document.addEventListener('DOMContentLoaded', function () {
   Object.keys(seleccionPorContexto).forEach(renderizarListaSeleccion);
 });
+
+// ===================== Mapa dentro de "Ver ruta" =====================
+// Un pin por SECTOR que la ruta visita (agrupando los contenedores que
+// caigan en el mismo sector), en el orden de la ruta, conectados con
+// una línea. Reutiliza CONTENEDORES_DATA y seleccionPorContexto que ya
+// se llenan arriba para el selector -- no pide nada nuevo al backend.
+const mapasRuta = {};
+
+function renderizarMapaRuta(rutaId) {
+  const contenedorMapaId = 'mapaRutaVer' + rutaId;
+  const elMapa = document.getElementById(contenedorMapaId);
+  if (!elMapa) return;
+
+  if (mapasRuta[rutaId]) {
+    mapasRuta[rutaId].remove();
+    delete mapasRuta[rutaId];
+  }
+  elMapa.innerHTML = '';
+
+  const porId = {};
+  CONTENEDORES_DATA.forEach(c => { porId[String(c.id)] = c; });
+
+  const ordenRuta = seleccionPorContexto[String(rutaId)] || [];
+
+  // Agrupar por sector, conservando el orden de PRIMERA aparición en
+  // la ruta (así la línea sigue el recorrido real, no un orden alfabético).
+  const sectoresOrden = [];
+  const porSectorId = {};
+  ordenRuta.forEach(function (item) {
+    const full = porId[String(item.id)];
+    if (!full || !full.sector || full.sector.latitud == null || full.sector.longitud == null) return;
+    const sid = full.sector.id;
+    if (!porSectorId[sid]) {
+      porSectorId[sid] = { sector: full.sector, contenedores: [] };
+      sectoresOrden.push(sid);
+    }
+    porSectorId[sid].contenedores.push(full);
+  });
+
+  if (sectoresOrden.length === 0) {
+    elMapa.innerHTML = '<p class="text-muted text-center py-4 mb-0">Ningún contenedor de esta ruta tiene su sector ubicado en el mapa todavía.</p>';
+    return;
+  }
+
+  const mapa = L.map(contenedorMapaId);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
+  }).addTo(mapa);
+
+  const puntos = [];
+  sectoresOrden.forEach(function (sid) {
+    const grupo = porSectorId[sid];
+    // Peor caso SOLO entre los contenedores de esta ruta en este sector
+    // (no de todo el sector en general).
+    const estado = peorCasoDe(grupo.contenedores);
+    const latlng = [Number(grupo.sector.latitud), Number(grupo.sector.longitud)];
+    const marker = L.marker(latlng, { icon: crearIconoPin(estado) }).addTo(mapa);
+    const lista = grupo.contenedores.map(function (c) {
+      return c.nombre + ' — ' + c.nivel_actual + '%';
+    }).join('<br>');
+    marker.bindPopup('<strong>' + grupo.sector.zona.nombre + ' / ' + grupo.sector.nombre + '</strong><br>' + lista);
+    puntos.push(latlng);
+  });
+
+  if (puntos.length > 1) {
+    L.polyline(puntos, { color: '#127a6c', weight: 3 }).addTo(mapa);
+  }
+  mapa.fitBounds(puntos, { padding: [30, 30], maxZoom: 16 });
+
+  mapasRuta[rutaId] = mapa;
+}
+
+{% for r in rutas %}
+document.getElementById('modalRutaVer{{ r.id }}').addEventListener('shown.bs.modal', function () {
+  renderizarMapaRuta('{{ r.id }}');
+});
+{% endfor %}
 </script>
 
 {% endblock %}

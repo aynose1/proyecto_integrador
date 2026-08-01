@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
@@ -28,5 +28,11 @@ class Sector(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     id_zona: Mapped[int] = mapped_column(ForeignKey("zonas.id"), nullable=False, index=True)
+
+    # Coordenada del sector completo (no por contenedor individual),
+    # capturada con un clic en un mapa desde la web -- opcional, los
+    # sectores existentes no tienen valor hasta que se ubican a propósito.
+    latitud: Mapped[float | None] = mapped_column(Numeric(10, 7), nullable=True)
+    longitud: Mapped[float | None] = mapped_column(Numeric(10, 7), nullable=True)
 
     zona = relationship("Zona", back_populates="sectores")
