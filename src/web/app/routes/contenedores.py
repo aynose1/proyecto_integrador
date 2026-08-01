@@ -73,12 +73,16 @@ def crear():
 @bp.route("/<int:contenedor_id>/editar", methods=["POST"])
 @admin_required
 def editar(contenedor_id: int):
+    # OJO: id_estado NO va aquí — el modal "Editar contenedor" nunca
+    # tuvo ese campo a propósito, porque el estado activo/inactivo ya se
+    # controla con el switch de la tabla (ver cambiar_estado() abajo).
+    # ContenedorUpdate lo tiene como opcional en la API, así que
+    # simplemente no enviarlo deja el estado actual intacto.
     payload = {
         "nombre": request.form["nombre"].strip(),
         "capacidad_max": float(request.form["capacidad_max"]),
         "altura_cm": float(request.form["altura_cm"]),
         "id_sector": int(request.form["id_sector"]),
-        "id_estado": int(request.form["id_estado"]),
     }
     try:
         api_request("put", f"/contenedores/{contenedor_id}", data=payload)
