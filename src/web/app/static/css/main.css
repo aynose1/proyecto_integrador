@@ -402,13 +402,19 @@ thead.table-light th,
   text-decoration: underline;
 }
 
-/* ---------- Header de cada módulo: tarjeta a todo el ancho del
-   content, SIN los botones de acción (esos van en .page-header-actions,
-   en su propia fila debajo) ---------- */
+/* ---------- Header de cada módulo: franja full-bleed (fondo oscuro,
+   sin los botones de acción -- esos van en .page-header-actions, en su
+   propia fila debajo) ---------- */
 .page-header {
   background: var(--brand-teal-900);
   padding: 1.1rem 1.5rem;
   border-left: 4px solid var(--brand-aqua-500);
+  /* Rompe el padding de <main class="container-fluid py-4 px-4"> (px-4 =
+     1.5rem, py-4 = 1.5rem arriba/abajo) para que el header llegue de
+     verdad hasta el borde del sidebar, el borde derecho del navegador,
+     Y quede pegado arriba -- sin esto, el header quedaba tan angosto
+     como el resto del contenido de abajo, y con un hueco encima. */
+  margin: -1.5rem -1.5rem 0 -1.5rem;
 }
 
 .page-header h1 {
