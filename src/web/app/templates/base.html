@@ -178,6 +178,42 @@
       if (contenedores.some(c => pct(c) >= 50)) return 'medio';
       return 'bajo';
     }
+    // Centra el mapa en la ubicación actual del dispositivo (respaldo
+    // cuando no hay nada más útil que mostrar, y también lo usa el
+    // botón "recentrar" tipo Google Maps). Requiere HTTPS o localhost;
+    // si el navegador niega el permiso o falla, no pasa nada.
+    function centrarEnDispositivo(mapa) {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          mapa.setView([pos.coords.latitude, pos.coords.longitude], 15);
+        },
+        function () {
+          // Permiso negado o falló -- sin problema, se queda donde estaba.
+        },
+        { timeout: 5000 }
+      );
+    }
+
+    // Botón "regresar a mi ubicación" (tipo Google Maps), esquina
+    // inferior derecha de cualquier mapa Leaflet. Nunca deja marcador,
+    // solo centra/hace zoom -- eso se decidió a propósito para no
+    // confundirlo con los pines reales de sectores/contenedores.
+    function agregarBotonUbicacion(mapa) {
+      const control = L.control({ position: 'bottomright' });
+      control.onAdd = function () {
+        const btn = L.DomUtil.create('button', 'leaflet-bar btn-ubicacion-mapa');
+        btn.type = 'button';
+        btn.title = 'Centrar en mi ubicación';
+        btn.innerHTML = '<i class="bi bi-crosshair"></i>';
+        L.DomEvent.disableClickPropagation(btn);
+        L.DomEvent.on(btn, 'click', function () {
+          centrarEnDispositivo(mapa);
+        });
+        return btn;
+      };
+      control.addTo(mapa);
+    }
   </script>
   {% block scripts %}{% endblock %}
 </body>

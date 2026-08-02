@@ -15,26 +15,31 @@ def _load_form_data():
     return {"usuarios": usuarios, "recolectores": recolectores, "contenedores": contenedores}
 
 
+def _rutas_completas(params: dict | None = None) -> list[dict]:
+    """Resúmenes + detalle completo de cada ruta (con params de filtro opcionales)."""
+    resumenes = api_request("get", "/rutas", params=params or {})
+    rutas = []
+    for resumen in resumenes:
+        detalle = api_request("get", f"/rutas/{resumen['id']}")
+        detalle["selected_ids"] = [d["contenedor"]["id"] for d in detalle.get("detalles", [])]
+        rutas.append(detalle)
+    return rutas
+
+
 @bp.route("")
 @admin_required
 def listar():
     # Por defecto se muestran las rutas de HOY. ?fecha=todas quita el
     # filtro; ?fecha=YYYY-MM-DD muestra un día específico (para navegar
-    # a otros días con los botones de la plantilla).
+    # a otros días con los botones de la plantilla). El mapa usa este
+    # MISMO filtro (no siempre "hoy"): si estás viendo ayer, el mapa
+    # muestra las rutas de ayer.
     fecha_param = request.args.get("fecha", date.today().isoformat())
     fecha_filtro = None if fecha_param == "todas" else fecha_param
 
     try:
         form_data = _load_form_data()
-        params = {"fecha": fecha_filtro} if fecha_filtro else {}
-        resumenes = api_request("get", "/rutas", params=params)
-        rutas = []
-        for resumen in resumenes:
-            detalle = api_request("get", f"/rutas/{resumen['id']}")
-            detalle["selected_ids"] = [
-                d["contenedor"]["id"] for d in detalle.get("detalles", [])
-            ]
-            rutas.append(detalle)
+        rutas = _rutas_completas({"fecha": fecha_filtro} if fecha_filtro else None)
         usuarios_map = {u["id"]: u for u in form_data["usuarios"]}
         todos_los_estados = api_request("get", "/catalogos/estados")
         estados_detalle = [e for e in todos_los_estados if e["estado"].lower() in ("pendiente", "recolectado")]

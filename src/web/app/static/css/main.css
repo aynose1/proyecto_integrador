@@ -538,6 +538,27 @@ thead.table-light th,
   background-color: var(--page-bg);
 }
 
+/* ---------- Botón "centrar en mi ubicación" (tipo Google Maps) en
+   cualquier mapa Leaflet -- ver agregarBotonUbicacion() en base.html ---------- */
+.btn-ubicacion-mapa {
+  width: 34px;
+  height: 34px;
+  background: #ffffff;
+  border: none;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(11, 59, 56, 0.3);
+  color: var(--brand-teal-700);
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-ubicacion-mapa:hover {
+  background: var(--brand-aqua-100);
+}
+
 .nav-tabs .nav-link {
   color: var(--ink-600);
 }

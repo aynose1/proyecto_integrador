@@ -79,50 +79,106 @@
   · Generado: {{ contexto.generado_en.strftime('%d/%m/%Y %H:%M') }}
 </p>
 
-<div class="row g-3 mt-1">
-  <div class="col-6 col-lg">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Rutas programadas</div>
-        <div class="fs-2 fw-bold">{{ contexto.resumen.total_rutas }}</div>
+<div class="row g-3 mt-1 mb-4">
+  <div class="col-lg-8">
+    <div class="row g-3">
+      <div class="col-6 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Rutas programadas</div>
+            <div class="fs-2 fw-bold">{{ contexto.resumen.total_rutas }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Rutas completadas</div>
+            <div class="fs-2 fw-bold">{{ contexto.resumen.rutas_completadas }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Contenedores asignados</div>
+            <div class="fs-2 fw-bold">{{ contexto.resumen.contenedores_asignados }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Contenedores recolectados</div>
+            <div class="fs-2 fw-bold">{{ contexto.resumen.contenedores_recolectados }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Cumplimiento</div>
+            <div class="fs-2 fw-bold">{{ contexto.resumen.porcentaje_cumplimiento }}%</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Peso total recolectado</div>
+            <div class="fs-2 fw-bold">{{ contexto.resumen.peso_total_recolectado }} <span class="fs-6 fw-normal text-muted">Kg</span></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  <div class="col-6 col-lg">
+
+  <div class="col-lg-4">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
-        <div class="text-muted small">Rutas completadas</div>
-        <div class="fs-2 fw-bold">{{ contexto.resumen.rutas_completadas }}</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-lg">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Contenedores asignados</div>
-        <div class="fs-2 fw-bold">{{ contexto.resumen.contenedores_asignados }}</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-lg">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Contenedores recolectados</div>
-        <div class="fs-2 fw-bold">{{ contexto.resumen.contenedores_recolectados }}</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-lg">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Cumplimiento</div>
-        <div class="fs-2 fw-bold">{{ contexto.resumen.porcentaje_cumplimiento }}%</div>
+        <h2 class="h6 mb-3">Resumen</h2>
+        <div class="stat-list">
+          <div class="stat-list__item">
+            <span class="stat-list__label">Peso total recolectado</span>
+            <span class="stat-list__value">{{ contexto.resumen_final.peso_total_kg }} Kg</span>
+          </div>
+          <div class="stat-list__item">
+            <span class="stat-list__label">Peso promedio por ruta completada</span>
+            <span class="stat-list__value">
+              {% if contexto.resumen_final.peso_promedio_por_ruta_kg is not none %}
+                {{ contexto.resumen_final.peso_promedio_por_ruta_kg }} Kg
+              {% else %}
+                <span class="text-muted fw-normal">No disponible</span>
+              {% endif %}
+            </span>
+          </div>
+          <div class="stat-list__item">
+            <span class="stat-list__label">Sector con mayor peso recolectado</span>
+            <span class="stat-list__value">
+              {% if contexto.resumen_final.sector_mayor_peso_nombre %}
+                {{ contexto.resumen_final.sector_mayor_peso_nombre }} <span class="text-muted fw-normal">({{ contexto.resumen_final.sector_mayor_peso_kg }} Kg)</span>
+              {% else %}
+                <span class="text-muted fw-normal">N/D</span>
+              {% endif %}
+            </span>
+          </div>
+          <div class="stat-list__item">
+            <span class="stat-list__label">Peso promedio por contenedor recolectado</span>
+            <span class="stat-list__value">
+              {% if contexto.resumen_final.peso_promedio_por_contenedor_kg is not none %}
+                {{ contexto.resumen_final.peso_promedio_por_contenedor_kg }} Kg
+              {% else %}
+                <span class="text-muted fw-normal">No disponible</span>
+              {% endif %}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="card border-0 shadow-sm mt-3">
+<div class="card border-0 shadow-sm mb-4">
   <div class="table-responsive">
     <table class="table table-hover mb-0 align-middle">
       <thead class="table-light">
@@ -133,6 +189,7 @@
           <th>Sector</th>
           <th>Asignados</th>
           <th>Recolectados</th>
+          <th>Peso (Kg)</th>
           <th>Inicio</th>
           <th>Fin</th>
           <th>Estado</th>
@@ -147,6 +204,7 @@
           <td>{{ fila.sector }}</td>
           <td>{{ fila.asignados }}</td>
           <td>{{ fila.recolectados }}</td>
+          <td>{{ fila.peso_recolectado }}</td>
           <td>{{ fila.hora_inicio or '—' }}</td>
           <td>{{ fila.hora_fin or '—' }}</td>
           <td>
@@ -156,52 +214,10 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="9" class="text-center text-muted py-4">Sin rutas para los filtros seleccionados.</td></tr>
+        <tr><td colspan="10" class="text-center text-muted py-4">Sin rutas para los filtros seleccionados.</td></tr>
         {% endfor %}
       </tbody>
     </table>
-  </div>
-</div>
-
-<div class="row g-3 mt-1 mb-4">
-  <div class="col-12">
-    <div class="card border-0 shadow-sm">
-      <div class="card-body">
-        <h2 class="h6 mb-3">Resumen final</h2>
-        <div class="stat-list">
-          <div class="stat-list__item">
-            <span class="stat-list__label">Tiempo promedio por ruta</span>
-            <span class="stat-list__value">
-              {% if contexto.resumen_final.tiempo_promedio_minutos is not none %}
-                {{ contexto.resumen_final.tiempo_promedio_minutos }} min
-              {% else %}
-                <span class="text-muted fw-normal">No disponible</span>
-              {% endif %}
-            </span>
-          </div>
-          <div class="stat-list__item">
-            <span class="stat-list__label">Ruta con mayor número de contenedores</span>
-            <span class="stat-list__value">
-              {% if contexto.resumen_final.ruta_mayor %}
-                {{ contexto.resumen_final.ruta_mayor }} <span class="text-muted fw-normal">({{ contexto.resumen_final.ruta_mayor_cantidad }})</span>
-              {% else %}
-                <span class="text-muted fw-normal">N/D</span>
-              {% endif %}
-            </span>
-          </div>
-          <div class="stat-list__item">
-            <span class="stat-list__label">Ruta con menor número de contenedores</span>
-            <span class="stat-list__value">
-              {% if contexto.resumen_final.ruta_menor %}
-                {{ contexto.resumen_final.ruta_menor }} <span class="text-muted fw-normal">({{ contexto.resumen_final.ruta_menor_cantidad }})</span>
-              {% else %}
-                <span class="text-muted fw-normal">N/D</span>
-              {% endif %}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 

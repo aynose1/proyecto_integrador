@@ -41,6 +41,34 @@
   </div>
 </div>
 
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h6 text-muted mb-0">
+    {% if dia_actual %}Rutas del {{ dia_actual.strftime('%d/%m/%Y') }} en el mapa{% else %}Todas las rutas en el mapa{% endif %}
+  </h2>
+  <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalMapaRutasHoy">
+    <i class="bi bi-geo-alt"></i> Ver mapa
+  </button>
+</div>
+
+<div class="modal fade" id="modalMapaRutasHoy" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">{% if dia_actual %}Rutas del {{ dia_actual.strftime('%d/%m/%Y') }}{% else %}Todas las rutas{% endif %}</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div id="leyendaRutasHoy" class="d-flex flex-wrap gap-3 mb-3 small"></div>
+        <div id="mapaRutasHoy" style="height:520px;border-radius:8px;"></div>
+        <p class="text-muted text-center mt-3 mb-0 d-none" id="sinRutasHoyMsg"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="card border-0 shadow-sm">
   <div class="table-responsive">
     <table class="table table-hover mb-0 align-middle">
@@ -84,15 +112,9 @@
           </td>
           <td class="text-end">
             <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalRutaVer{{ r.id }}">Ver</button>
-            {% if r.fecha >= hoy %}
             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalRutaEditar{{ r.id }}">Editar</button>
             <form method="post" action="{{ url_for('rutas.eliminar', ruta_id=r.id) }}" class="d-none" id="form-eliminar-ruta-{{ r.id }}"></form>
             <button type="button" class="btn btn-sm btn-outline-danger" data-confirm-delete="form-eliminar-ruta-{{ r.id }}" data-confirm-nombre="la ruta &quot;{{ r.nombre }}&quot;">Eliminar</button>
-            {% else %}
-            <span class="badge text-bg-light border text-muted" title="Las rutas de días anteriores no se pueden modificar">
-              <i class="bi bi-lock"></i> Solo lectura
-            </span>
-            {% endif %}
           </td>
         </tr>
         {% else %}
@@ -235,17 +257,11 @@
                 <td>{{ nivel }}%</td>
                 <td>{{ c.peso_actual }} Kg</td>
                 <td>
-                  {% if r.fecha >= hoy %}
                   <select name="estado_detalle_{{ detalle.id }}" class="form-select form-select-sm" style="width: auto; display: inline-block;">
                     {% for e in estados_detalle %}
                     <option value="{{ e.id }}" {% if detalle.estado.id == e.id %}selected{% endif %}>{{ e.estado|capitalize }}</option>
                     {% endfor %}
                   </select>
-                  {% else %}
-                  <span class="badge {% if detalle.estado.estado == 'recolectado' %}bg-success{% else %}text-bg-secondary{% endif %}">
-                    {{ detalle.estado.estado|capitalize }}
-                  </span>
-                  {% endif %}
                 </td>
               </tr>
               {% else %}
@@ -258,7 +274,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
-        {% if r.detalles and r.fecha >= hoy %}
+        {% if r.detalles %}
         <button type="submit" form="formEstados{{ r.id }}" class="btn btn-primary">Cambiar estatus</button>
         {% endif %}
       </div>
@@ -404,6 +420,16 @@ function renderizarListaSeleccion(contexto) {
     `).join('');
   }
   inputEl.value = lista.map(c => c.id).join(',');
+
+  // Guardar solo se habilita cuando hay al menos 1 contenedor -- aplica
+  // tanto a "Nueva ruta" como a cada "Editar ruta" (por si se quitan
+  // todos los que ya tenía).
+  const formId = contexto === 'nueva' ? 'formRutaNueva' : `formRutaEditar${contexto}`;
+  const form = document.getElementById(formId);
+  const btnGuardar = form ? form.querySelector('button[type="submit"]') : null;
+  if (btnGuardar) {
+    btnGuardar.disabled = lista.length === 0;
+  }
 }
 
 window.quitarDeSeleccion = function (contexto, idx) {
@@ -648,6 +674,7 @@ function renderizarMapaRuta(rutaId) {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap',
   }).addTo(mapa);
+  agregarBotonUbicacion(mapa);
 
   const puntos = [];
   sectoresOrden.forEach(function (sid) {
@@ -677,6 +704,110 @@ document.getElementById('modalRutaVer{{ r.id }}').addEventListener('shown.bs.mod
   renderizarMapaRuta('{{ r.id }}');
 });
 {% endfor %}
+// ===================== Mapa de rutas (usa el mismo filtro de fecha de la tabla) =====================
+// Cada ruta se distingue por un color propio (pines + línea de
+// recorrido) -- a diferencia del mapa de "Ver ruta" (una sola ruta,
+// pines coloreados por nivel/peso), aquí lo que importa es distinguir
+// A QUÉ RUTA pertenece cada parada, no su estado de llenado.
+const RUTAS_HOY_MAPA = [
+  {% for r in rutas %}
+  {
+    id: {{ r.id }},
+    nombre: {{ r.nombre|tojson }},
+    contenedores: {{ (r.detalles|sort(attribute='orden')|map(attribute='contenedor')|list)|tojson }}
+  },
+  {% endfor %}
+];
+
+const PALETA_RUTAS_HOY = ['#127a6c', '#dfa524', '#bf4a40', '#5b6ee1', '#a34fc9', '#e0668c', '#3f9142', '#c97b2e'];
+
+function crearIconoPinColor(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:22px;height:22px;border-radius:50% 50% 50% 0;background:${color};transform:rotate(-45deg);box-shadow:0 0 0 2px #fff;"></div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 22],
+    popupAnchor: [0, -22],
+  });
+}
+
+let mapaRutasHoyInstancia = null;
+
+function inicializarMapaRutasHoy() {
+  if (mapaRutasHoyInstancia) {
+    mapaRutasHoyInstancia.invalidateSize();
+    return;
+  }
+
+  mapaRutasHoyInstancia = L.map('mapaRutasHoy').setView([20.5888, -100.3899], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
+  }).addTo(mapaRutasHoyInstancia);
+  agregarBotonUbicacion(mapaRutasHoyInstancia);
+
+  const leyenda = document.getElementById('leyendaRutasHoy');
+  const mensaje = document.getElementById('sinRutasHoyMsg');
+  leyenda.innerHTML = '';
+
+  if (RUTAS_HOY_MAPA.length === 0) {
+    mensaje.textContent = 'No hay rutas para mostrar en el mapa.';
+    mensaje.classList.remove('d-none');
+    return;
+  }
+
+  const porId = {};
+  CONTENEDORES_DATA.forEach(function (c) { porId[String(c.id)] = c; });
+
+  const todosLosPuntos = [];
+
+  RUTAS_HOY_MAPA.forEach(function (ruta, idx) {
+    const color = PALETA_RUTAS_HOY[idx % PALETA_RUTAS_HOY.length];
+
+    leyenda.insertAdjacentHTML('beforeend', `
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:4px;"></span>${ruta.nombre}</span>
+    `);
+
+    // Agrupar por sector, conservando el orden de primera aparición en
+    // la ruta (mismo criterio que el mapa de "Ver ruta").
+    const sectoresOrden = [];
+    const porSector = {};
+    ruta.contenedores.forEach(function (item) {
+      const full = porId[String(item.id)];
+      if (!full || !full.sector || full.sector.latitud == null || full.sector.longitud == null) return;
+      const sid = full.sector.id;
+      if (!porSector[sid]) {
+        porSector[sid] = { sector: full.sector, contenedores: [] };
+        sectoresOrden.push(sid);
+      }
+      porSector[sid].contenedores.push(full);
+    });
+
+    const puntosRuta = [];
+    sectoresOrden.forEach(function (sid) {
+      const grupo = porSector[sid];
+      const latlng = [Number(grupo.sector.latitud), Number(grupo.sector.longitud)];
+      const marker = L.marker(latlng, { icon: crearIconoPinColor(color) }).addTo(mapaRutasHoyInstancia);
+      const lista = grupo.contenedores.map(function (c) { return c.nombre; }).join('<br>');
+      marker.bindPopup('<strong>' + ruta.nombre + '</strong><br>' + grupo.sector.zona.nombre + ' / ' + grupo.sector.nombre + '<br>' + lista);
+      puntosRuta.push(latlng);
+      todosLosPuntos.push(latlng);
+    });
+
+    if (puntosRuta.length > 1) {
+      L.polyline(puntosRuta, { color: color, weight: 3 }).addTo(mapaRutasHoyInstancia);
+    }
+  });
+
+  if (todosLosPuntos.length > 0) {
+    mensaje.classList.add('d-none');
+    mapaRutasHoyInstancia.fitBounds(todosLosPuntos, { padding: [30, 30], maxZoom: 16 });
+  } else {
+    mensaje.textContent = 'Ninguno de los sectores de estas rutas tiene ubicación capturada todavía.';
+    mensaje.classList.remove('d-none');
+  }
+}
+
+document.getElementById('modalMapaRutasHoy').addEventListener('shown.bs.modal', inicializarMapaRutasHoy);
 </script>
 
 {% endblock %}

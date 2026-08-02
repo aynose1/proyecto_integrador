@@ -266,6 +266,9 @@
   const CONTENEDORES_UBIC = {{ contenedores|tojson }};
   const SECTORES_UBIC = {{ sectores|tojson }};
 
+  // centrarEnDispositivo() ya vive en base.html (compartida entre
+  // Ubicaciones y Rutas) -- no se repite aquí.
+
   // ---------- Captura de ubicación (mapa dentro de Nuevo/Editar sector) ----------
   const mapasCaptura = {};
 
@@ -275,15 +278,18 @@
       return;
     }
 
-    const centro = (latInicial != null && lonInicial != null) ? [latInicial, lonInicial] : [20.5888, -100.3899];
-    const mapa = L.map(mapaId).setView(centro, (latInicial != null) ? 16 : 13);
+    const tieneCoordenada = latInicial != null && lonInicial != null;
+    const centro = tieneCoordenada ? [latInicial, lonInicial] : [20.5888, -100.3899];
+    const mapa = L.map(mapaId).setView(centro, tieneCoordenada ? 16 : 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap',
     }).addTo(mapa);
 
     let marcador = null;
-    if (latInicial != null && lonInicial != null) {
+    if (tieneCoordenada) {
       marcador = L.marker(centro, { icon: crearIconoPin('bajo') }).addTo(mapa);
+    } else {
+      centrarEnDispositivo(mapa);
     }
 
     mapa.on('click', function (e) {
@@ -293,6 +299,7 @@
       document.getElementById(lonInputId).value = e.latlng.lng.toFixed(7);
     });
 
+    agregarBotonUbicacion(mapa);
     mapasCaptura[mapaId] = mapa;
   }
 
@@ -323,6 +330,7 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap',
     }).addTo(mapaSectoresInstancia);
+    agregarBotonUbicacion(mapaSectoresInstancia);
 
     const puntos = [];
     SECTORES_UBIC.forEach(function (s) {
@@ -335,6 +343,8 @@
     });
     if (puntos.length > 0) {
       mapaSectoresInstancia.fitBounds(puntos, { padding: [30, 30], maxZoom: 16 });
+    } else {
+      centrarEnDispositivo(mapaSectoresInstancia);
     }
   }
 
