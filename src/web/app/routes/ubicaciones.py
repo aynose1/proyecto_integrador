@@ -10,7 +10,7 @@ bp = Blueprint("ubicaciones", __name__, url_prefix="/ubicaciones")
 @admin_required
 def listar():
     tab = request.args.get("tab", "zonas")
-    if tab not in {"zonas", "sectores", "mapa"}:
+    if tab not in {"zonas", "sectores"}:
         tab = "zonas"
     try:
         sectores = api_request("get", "/sectores")

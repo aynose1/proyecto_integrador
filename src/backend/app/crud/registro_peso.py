@@ -35,11 +35,6 @@ class CRUDRegistroPeso:
         db.commit()
         db.refresh(registro)
         db.refresh(contenedor)
-
-        from app.crud.notificacion import notificacion as crud_notificacion
-
-        crud_notificacion.revisar_discrepancia_recoleccion(db, contenedor)
-
         return registro
 
     def historial_por_contenedor(

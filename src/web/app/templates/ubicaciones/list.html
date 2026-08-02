@@ -8,12 +8,18 @@
 </div>
 {% include "_flash_messages.html" %}
 
-<div class="card border-0 shadow-sm mt-4">
+<div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+  <h2 class="h6 text-muted mb-0">Ubicación de los sectores</h2>
+  <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalMapaSectores">
+    <i class="bi bi-geo-alt"></i> Ver mapa
+  </button>
+</div>
+
+<div class="card border-0 shadow-sm">
   <div class="card-header bg-white border-bottom">
     <nav class="nav nav-tabs nav-fill" role="tablist" style="margin: -1px -1px 0 -1px;">
       <button class="nav-link {% if tab == 'zonas' %}active{% endif %}" id="tab-zonas-btn" data-bs-toggle="tab" data-bs-target="#tab-zonas" type="button" role="tab">Zonas</button>
       <button class="nav-link {% if tab == 'sectores' %}active{% endif %}" id="tab-sectores-btn" data-bs-toggle="tab" data-bs-target="#tab-sectores" type="button" role="tab">Sectores</button>
-      <button class="nav-link {% if tab == 'mapa' %}active{% endif %}" id="tab-mapa-btn" data-bs-toggle="tab" data-bs-target="#tab-mapa" type="button" role="tab">Mapa</button>
     </nav>
   </div>
 
@@ -96,9 +102,17 @@
       </div>
     </div>
 
-    {# ========== MAPA ========== #}
-    <div class="tab-pane fade {% if tab == 'mapa' %}show active{% endif %}" id="tab-mapa" role="tabpanel">
-      <div class="p-4">
+  </div>
+</div>
+
+<div class="modal fade" id="modalMapaSectores" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Ubicación de los sectores</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
         <div class="d-flex gap-3 mb-3 small text-muted">
           <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#17b8a6;margin-right:4px;"></span>Bajo</span>
           <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dfa524;margin-right:4px;"></span>Medio</span>
@@ -108,6 +122,9 @@
         {% if sectores|selectattr('latitud', 'ne', none)|list|length == 0 %}
         <p class="text-muted text-center mt-3 mb-0">Ningún sector tiene ubicación capturada todavía. Edita un sector y da clic en "Ubicar en el mapa".</p>
         {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
@@ -321,9 +338,6 @@
     }
   }
 
-  document.getElementById('tab-mapa-btn').addEventListener('shown.bs.tab', inicializarMapaSectores);
-  if (document.getElementById('tab-mapa-btn').classList.contains('active')) {
-    document.addEventListener('DOMContentLoaded', inicializarMapaSectores);
-  }
+  document.getElementById('modalMapaSectores').addEventListener('shown.bs.modal', inicializarMapaSectores);
 </script>
 {% endblock %}
