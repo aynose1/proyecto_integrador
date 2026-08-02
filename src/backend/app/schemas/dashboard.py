@@ -65,6 +65,10 @@ class DashboardResumen(BaseModel):
     contenedores_sin_datos_a_fecha: int
     contenedores_llenado_alto: int
     contenedores_peso_alto: int
+    contenedores_nivel_desbordado: int
+    contenedores_peso_excedido: int
+    rutas_totales_hoy: int
+    rutas_completadas_hoy: int
     distribucion_nivel: DistribucionNivel
     distribucion_peso: DistribucionNivel
     promedio_por_zona: list[PromedioZona]

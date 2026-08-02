@@ -29,51 +29,106 @@
 </div>
 {% else %}
 
-<!-- KPIs generales -->
 <div class="row g-3 mt-1">
-  <div class="col-6 col-lg-4">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Total de contenedores</div>
-        <div class="fs-2 fw-bold">{{ resumen.total_contenedores }}</div>
+  <div class="col-lg-8">
+    <!-- KPIs generales -->
+    <div class="row g-3">
+      <div class="col-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Total de contenedores</div>
+            <div class="fs-2 fw-bold">{{ resumen.total_contenedores }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Recolectores asignados ese día</div>
+            <div class="fs-2 fw-bold">{{ resumen.recolectores_hoy|length }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Rutas completadas hoy</div>
+            <div class="fs-2 fw-bold">{{ resumen.rutas_completadas_hoy }}/{{ resumen.rutas_totales_hoy }}</div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="col-6 col-lg-4">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Recolectores asignados ese día</div>
-        <div class="fs-2 fw-bold">{{ resumen.recolectores_hoy|length }}</div>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- KPIs de Nivel -->
-<h2 class="h6 text-muted mt-3 mb-2">Nivel</h2>
-<div class="row g-3">
-  <div class="col-6 col-lg-4">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Cerca del llenado (&ge;80%)</div>
-        <div class="fs-2 fw-bold {% if resumen.contenedores_llenado_alto > 0 %}text-danger{% endif %}">
-          {{ resumen.contenedores_llenado_alto }}
+    <!-- KPIs de Nivel -->
+    <h2 class="h6 text-muted mt-3 mb-2">Nivel</h2>
+    <div class="row g-3">
+      <div class="col-6 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Cerca del llenado (&ge;80%)</div>
+            <div class="fs-2 fw-bold {% if resumen.contenedores_llenado_alto > 0 %}text-danger{% endif %}">
+              {{ resumen.contenedores_llenado_alto }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Desbordados (nivel = 100%)</div>
+            <div class="fs-2 fw-bold {% if resumen.contenedores_nivel_desbordado > 0 %}text-danger{% endif %}">
+              {{ resumen.contenedores_nivel_desbordado }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs de Peso -->
+    <h2 class="h6 text-muted mt-3 mb-2">Peso</h2>
+    <div class="row g-3">
+      <div class="col-6 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Cerca de la capacidad máxima (&ge;80%)</div>
+            <div class="fs-2 fw-bold {% if resumen.contenedores_peso_alto > 0 %}text-danger{% endif %}">
+              {{ resumen.contenedores_peso_alto }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Exceden su peso límite</div>
+            <div class="fs-2 fw-bold {% if resumen.contenedores_peso_excedido > 0 %}text-danger{% endif %}">
+              {{ resumen.contenedores_peso_excedido }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- KPIs de Peso -->
-<h2 class="h6 text-muted mt-3 mb-2">Peso</h2>
-<div class="row g-3">
-  <div class="col-6 col-lg-4">
+  <div class="col-lg-4">
     <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="text-muted small">Cerca de la capacidad máxima (&ge;80%)</div>
-        <div class="fs-2 fw-bold {% if resumen.contenedores_peso_alto > 0 %}text-danger{% endif %}">
-          {{ resumen.contenedores_peso_alto }}
+      <div class="card-body d-flex flex-column h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="h6 mb-0">Zonas monitoreadas</h2>
+          <span class="small text-muted">{{ resumen.promedio_por_zona|length }}</span>
         </div>
+        {% if resumen.promedio_por_zona %}
+        <ul class="list-unstyled mb-0 flex-fill" style="overflow-y: auto; min-height: 0;">
+          {% for z in resumen.promedio_por_zona %}
+          <li class="d-flex justify-content-between align-items-center py-1 {% if not loop.last %}border-bottom{% endif %}">
+            <span>{{ z.zona }}</span>
+            <span class="badge text-bg-light border">{{ z.total_contenedores }} contenedor{{ 'es' if z.total_contenedores != 1 else '' }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted mb-0">No hay zonas con contenedores registrados.</p>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -99,7 +154,9 @@
         <div class="card-body">
           <h2 class="h6 mb-2">Nivel</h2>
           {% if resumen.total_contenedores > 0 %}
-          <canvas id="chartDistribucionNivel" height="130"></canvas>
+          <div style="height: 150px;">
+            <canvas id="chartDistribucionNivel"></canvas>
+          </div>
           <div class="dona-leyenda small text-muted mt-2">
             <span><span class="leyenda-punto leyenda-punto--normal"></span> Normal: {{ resumen.distribucion_nivel.bajo }} ({{ resumen.distribucion_nivel.bajo_pct }}%)</span>
             <span><span class="leyenda-punto leyenda-punto--alarma"></span> Alarma: {{ resumen.distribucion_nivel.medio }} ({{ resumen.distribucion_nivel.medio_pct }}%)</span>
@@ -114,7 +171,9 @@
         <div class="card-body">
           <h2 class="h6 mb-2">Peso</h2>
           {% if resumen.total_contenedores > 0 %}
-          <canvas id="chartDistribucionPeso" height="130"></canvas>
+          <div style="height: 150px;">
+            <canvas id="chartDistribucionPeso"></canvas>
+          </div>
           <div class="dona-leyenda small text-muted mt-2">
             <span><span class="leyenda-punto leyenda-punto--normal"></span> Normal: {{ resumen.distribucion_peso.bajo }} ({{ resumen.distribucion_peso.bajo_pct }}%)</span>
             <span><span class="leyenda-punto leyenda-punto--alarma"></span> Alarma: {{ resumen.distribucion_peso.medio }} ({{ resumen.distribucion_peso.medio_pct }}%)</span>
@@ -161,7 +220,7 @@
 
 <!-- Listas -->
 <div class="row g-3 mt-1 mb-4">
-  <div class="col-lg-4">
+  <div class="col-lg-6">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -195,7 +254,7 @@
       </div>
     </div>
   </div>
-  <div class="col-lg-4">
+  <div class="col-lg-6">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -229,28 +288,6 @@
       </div>
     </div>
   </div>
-  <div class="col-lg-4">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h2 class="h6 mb-0">Zonas monitoreadas</h2>
-          <span class="small text-muted">{{ resumen.promedio_por_zona|length }}</span>
-        </div>
-        {% if resumen.promedio_por_zona %}
-        <ul class="list-unstyled mb-0">
-          {% for z in resumen.promedio_por_zona %}
-          <li class="d-flex justify-content-between align-items-center py-1 {% if not loop.last %}border-bottom{% endif %}">
-            <span>{{ z.zona }}</span>
-            <span class="badge text-bg-light border">{{ z.total_contenedores }} contenedor{{ 'es' if z.total_contenedores != 1 else '' }}</span>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="text-muted mb-0">No hay zonas con contenedores registrados.</p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
 </div>
 {% endif %}
 
@@ -267,6 +304,7 @@
 
   const OPCIONES_DONA = {
     cutout: '68%',
+    maintainAspectRatio: false,
     plugins: {
       legend: { display: false }, // la leyenda ya se dibuja abajo del canvas, con el conteo
     },

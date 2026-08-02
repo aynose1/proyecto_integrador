@@ -406,10 +406,17 @@ thead.table-light th,
    content, SIN los botones de acción (esos van en .page-header-actions,
    en su propia fila debajo) ---------- */
 .page-header {
-  background: var(--brand-aqua-100);
-  border: 1px solid rgba(11, 59, 56, 0.10);
-  border-radius: 12px;
-  padding: 1.25rem 1.5rem;
+  background: var(--brand-teal-900);
+  padding: 1.1rem 1.5rem;
+  border-left: 4px solid var(--brand-aqua-500);
+}
+
+.page-header h1 {
+  color: #ffffff;
+}
+
+.page-header p.text-muted {
+  color: var(--brand-aqua-300) !important;
 }
 
 .page-header-actions {

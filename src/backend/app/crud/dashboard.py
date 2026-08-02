@@ -244,6 +244,20 @@ def _tendencia_7_dias(db: Session, fecha: date_type, contenedores: list[Contened
     return resultado
 
 
+def _rutas_hoy_progreso(db: Session, fecha: date_type) -> dict:
+    """Total de rutas creadas para 'fecha' vs cuántas ya quedaron completadas (todos sus detalles en 'recolectado')."""
+    rutas_hoy = (
+        db.query(Ruta)
+        .options(selectinload(Ruta.detalles).joinedload(DetalleRuta.estado))
+        .filter(Ruta.fecha == fecha)
+        .all()
+    )
+    return {
+        "total": len(rutas_hoy),
+        "completadas": sum(1 for r in rutas_hoy if r.completada),
+    }
+
+
 def resumen(db: Session, fecha: date_type) -> dict:
     """
     total_contenedores siempre es el total ACTUAL (no hay fecha de
@@ -276,12 +290,24 @@ def resumen(db: Session, fecha: date_type) -> dict:
     niveles_lista = [niveles[c.id] for c in contenedores if c.id in niveles]
     pesos_pct_lista = [pesos_pct[c.id] for c in contenedores if c.id in pesos_pct]
 
+    rutas_progreso = _rutas_hoy_progreso(db, fecha)
+
     return {
         "fecha": fecha,
         "total_contenedores": len(contenedores),
         "contenedores_sin_datos_a_fecha": contenedores_sin_datos,
         "contenedores_llenado_alto": sum(1 for n in niveles_lista if n >= UMBRAL_ALTO),
         "contenedores_peso_alto": sum(1 for p in pesos_pct_lista if p >= UMBRAL_ALTO),
+        # "Desbordado": el sensor está midiendo el tope (100%) de lo que
+        # puede reportar -- el clamp de /registros-nivel deja nivel_porcentaje
+        # en exactamente 100.0 cuando la distancia medida es 0 o negativa.
+        "contenedores_nivel_desbordado": sum(1 for n in niveles_lista if n >= 100),
+        # "Excede su límite": el peso medido ya alcanzó o superó su
+        # capacidad_max (mismo umbral que "crítico" en la barra de peso
+        # de Contenedores/Ver).
+        "contenedores_peso_excedido": sum(1 for p in pesos_pct_lista if p >= 100),
+        "rutas_totales_hoy": rutas_progreso["total"],
+        "rutas_completadas_hoy": rutas_progreso["completadas"],
         "distribucion_nivel": _distribucion(niveles_lista),
         "distribucion_peso": _distribucion(pesos_pct_lista),
         "promedio_por_zona": _promedio_por_zona(contenedores, niveles),
