@@ -1,22 +1,34 @@
 import { useEffect, useState } from 'react';
-import { View, Text, Pressable, Modal, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, Modal, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { colors } from '../theme';
+import { colors, typography } from '../theme';
 import { getPerfil, logout } from '../services/authService';
 
 /**
- * Barra superior fija de cada pestaña (tipo Google Classroom): título +
- * un avatar circular arriba a la izquierda que abre un menú con
- * "Cambiar de cuenta" y "Cerrar sesión".
+ * Barra superior fija de cada pestaña, igual esquema que el header
+ * nuevo de la web (fondo teal-900, acento aqua): logotipo arriba a la
+ * izquierda, título de la pestaña en el centro, avatar arriba a la
+ * derecha que abre el menú de "Cambiar de cuenta" / "Cerrar sesión".
  *
- * NOTA: esta app no guarda varias cuentas en el dispositivo (solo hay
- * una sesión activa a la vez), así que "Cambiar de cuenta" hace
- * exactamente lo mismo que "Cerrar sesión" -- cierra la sesión actual y
- * manda a la pantalla de login para volver a entrar. Se dejan como dos
- * opciones separadas solo por ser el patrón que la gente ya conoce de
- * apps como Gmail/Classroom, no porque haya una diferencia real hoy.
+ * LOGOTIPO: por ahora usa assets/icon.png (el placeholder teal con
+ * "PI" que ya existe en el proyecto) porque es el único archivo que
+ * tengo garantizado que existe -- si apunto a un archivo que no
+ * existe, el build de Expo truena. Para poner el logo real: agrega tu
+ * archivo (ej. assets/logo.png, fondo transparente, recomendado ~200px
+ * de alto) y cambia la línea del require() más abajo.
+ *
+ * SafeAreaView vacío de abajo: ver la nota larga que ya se dejó en
+ * versiones anteriores de este archivo -- pinta el inset superior
+ * (donde vive la barra de notificaciones) del mismo teal oscuro que el
+ * header, para que quede continuo en cualquier pantalla (incluida la
+ * de cámara, con fondo negro).
+ *
+ * NOTA sobre "Cambiar de cuenta": la app solo guarda una sesión a la
+ * vez, así que hace exactamente lo mismo que "Cerrar sesión" por
+ * dentro -- se dejan como 2 opciones separadas solo por ser el patrón
+ * que ya conoce la gente de Gmail/Classroom.
  */
 export default function Header({ title }) {
   const router = useRouter();
@@ -46,35 +58,41 @@ export default function Header({ title }) {
     : '..';
 
   return (
-    <View style={styles.header}>
-      <Pressable style={styles.avatarButton} onPress={() => setMenuVisible(true)}>
-        <Text style={styles.avatarTexto}>{iniciales}</Text>
-      </Pressable>
-      <Text style={styles.titulo} numberOfLines={1}>
-        {title}
-      </Text>
-      <View style={styles.spacer} />
+    <>
+      <SafeAreaView style={{ backgroundColor: colors.brandTeal900 }} />
+      <View style={styles.header}>
+        {/* LOGOTIPO -- cambia este require() por tu archivo real cuando lo tengas */}
+        <Image source={require('../assets/icon.png')} style={styles.logo} resizeMode="contain" />
 
-      <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={() => setMenuVisible(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setMenuVisible(false)}>
-          <View style={styles.menu}>
-            <Text style={styles.menuNombre}>
-              {perfil ? `${perfil.nombre} ${perfil.apellido_paterno}` : 'Recolector'}
-            </Text>
-            {perfil?.codigo_usuario ? <Text style={styles.menuCodigo}>{perfil.codigo_usuario}</Text> : null}
-            <View style={styles.menuDivider} />
-            <Pressable style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]} onPress={salir}>
-              <Ionicons name="swap-horizontal-outline" size={18} color={colors.ink900} />
-              <Text style={styles.menuItemTexto}>Cambiar de cuenta</Text>
-            </Pressable>
-            <Pressable style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]} onPress={salir}>
-              <Ionicons name="log-out-outline" size={18} color={colors.danger} />
-              <Text style={[styles.menuItemTexto, { color: colors.danger }]}>Cerrar sesión</Text>
-            </Pressable>
-          </View>
+        <Text style={styles.titulo} numberOfLines={1}>
+          {title}
+        </Text>
+
+        <Pressable style={styles.avatarButton} onPress={() => setMenuVisible(true)}>
+          <Text style={styles.avatarTexto}>{iniciales}</Text>
         </Pressable>
-      </Modal>
-    </View>
+
+        <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={() => setMenuVisible(false)}>
+          <Pressable style={styles.backdrop} onPress={() => setMenuVisible(false)}>
+            <View style={styles.menu}>
+              <Text style={styles.menuNombre}>
+                {perfil ? `${perfil.nombre} ${perfil.apellido_paterno}` : 'Recolector'}
+              </Text>
+              {perfil?.codigo_usuario ? <Text style={styles.menuCodigo}>{perfil.codigo_usuario}</Text> : null}
+              <View style={styles.menuDivider} />
+              <Pressable style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]} onPress={salir}>
+                <Ionicons name="swap-horizontal-outline" size={18} color={colors.ink900} />
+                <Text style={styles.menuItemTexto}>Cambiar de cuenta</Text>
+              </Pressable>
+              <Pressable style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]} onPress={salir}>
+                <Ionicons name="log-out-outline" size={18} color={colors.danger} />
+                <Text style={[styles.menuItemTexto, { color: colors.danger }]}>Cerrar sesión</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Modal>
+      </View>
+    </>
   );
 }
 
@@ -82,29 +100,36 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
+    paddingVertical: 10,
+    gap: 12,
+    backgroundColor: colors.brandTeal900,
+  },
+  logo: {
+    width: 32,
+    height: 32,
+  },
+  titulo: {
+    flex: 1,
+    fontFamily: typography.bold,
+    fontSize: 17,
+    color: '#ffffff',
+    letterSpacing: 0.2,
   },
   avatarButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.brandTeal700,
+    backgroundColor: colors.brandAqua500,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarTexto: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
-  titulo: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '700', color: colors.ink900 },
-  spacer: { width: 36 },
+  avatarTexto: { fontFamily: typography.bold, color: colors.brandTeal900, fontSize: 13 },
   backdrop: { flex: 1, backgroundColor: 'rgba(7, 33, 30, 0.4)' },
   menu: {
     position: 'absolute',
     top: 60,
-    left: 16,
+    right: 16,
     backgroundColor: colors.surface,
     borderRadius: 12,
     paddingVertical: 8,
@@ -117,10 +142,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
   },
-  menuNombre: { fontSize: 15, fontWeight: '700', color: colors.ink900, paddingHorizontal: 16, paddingTop: 8 },
-  menuCodigo: { fontSize: 12, color: colors.ink600, paddingHorizontal: 16, paddingBottom: 8 },
+  menuNombre: { fontFamily: typography.bold, fontSize: 15, color: colors.ink900, paddingHorizontal: 16, paddingTop: 8 },
+  menuCodigo: { fontFamily: typography.regular, fontSize: 12, color: colors.ink600, paddingHorizontal: 16, paddingBottom: 8 },
   menuDivider: { height: 1, backgroundColor: colors.borderSoft, marginVertical: 4 },
   menuItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12 },
   menuItemPressed: { backgroundColor: colors.brandAqua100 },
-  menuItemTexto: { fontSize: 14, fontWeight: '600', color: colors.ink900 },
+  menuItemTexto: { fontFamily: typography.semibold, fontSize: 14, color: colors.ink900 },
 });

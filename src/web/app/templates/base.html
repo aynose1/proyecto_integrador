@@ -87,6 +87,31 @@
       </div>
     </div>
 
+    {# Modal compartido de confirmación GENÉRICA (para acciones que no son
+       "eliminar" -- ej. marcar una notificación como atendida). Cualquier
+       botón con data-confirm-action="<id-del-form>" lo dispara; el texto y
+       estilo del botón se personalizan con data-confirm-titulo,
+       data-confirm-mensaje, data-confirm-boton y data-confirm-clase.
+       Separado de #modalConfirmarEliminar a propósito, para no arriesgar
+       nada de lo que ya usa eliminar en 4 módulos distintos. #}
+    <div class="modal fade" id="modalConfirmarAccion" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="confirmarAccionTitulo">Confirmar</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-0" id="confirmarAccionMensaje"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="confirmarAccionBoton">Confirmar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="app-content">
       <header class="topbar d-lg-none">
         <button class="btn btn-sm btn-outline-secondary" type="button" id="sidebarToggle" aria-label="Abrir menú">
@@ -142,6 +167,24 @@
 
       modalEl.querySelector('#confirmarEliminarNombre').textContent = trigger.getAttribute('data-confirm-nombre') || 'este elemento';
       const confirmBtn = modalEl.querySelector('#confirmarEliminarBoton');
+      confirmBtn.onclick = function () { form.submit(); };
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    });
+
+    // Modal compartido de confirmación GENÉRICA (ver #modalConfirmarAccion arriba).
+    document.addEventListener('click', function (ev) {
+      const trigger = ev.target.closest('[data-confirm-action]');
+      if (!trigger) return;
+      const formId = trigger.getAttribute('data-confirm-action');
+      const form = document.getElementById(formId);
+      const modalEl = document.getElementById('modalConfirmarAccion');
+      if (!form || !modalEl) return;
+
+      modalEl.querySelector('#confirmarAccionTitulo').textContent = trigger.getAttribute('data-confirm-titulo') || 'Confirmar acción';
+      modalEl.querySelector('#confirmarAccionMensaje').textContent = trigger.getAttribute('data-confirm-mensaje') || '¿Confirmas esta acción?';
+      const confirmBtn = modalEl.querySelector('#confirmarAccionBoton');
+      confirmBtn.textContent = trigger.getAttribute('data-confirm-boton') || 'Confirmar';
+      confirmBtn.className = 'btn ' + (trigger.getAttribute('data-confirm-clase') || 'btn-primary');
       confirmBtn.onclick = function () { form.submit(); };
       bootstrap.Modal.getOrCreateInstance(modalEl).show();
     });

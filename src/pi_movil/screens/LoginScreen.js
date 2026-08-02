@@ -12,6 +12,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 
 import { colors } from '../theme';
 import { login } from '../services/authService';
@@ -39,6 +40,11 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/* Fondo claro aquí -- sobreescribe el "light" (íconos claros)
+          que se puso como global en app/_layout.js para las 3 pestañas
+          con header oscuro. Sin esto, la barra de notificaciones se
+          volvería ilegible (íconos blancos sobre fondo claro) en login. */}
+      <StatusBar style="dark" />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Text style={styles.brand}>Echo-Bin</Text>

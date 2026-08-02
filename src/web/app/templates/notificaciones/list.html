@@ -55,7 +55,7 @@
 {% for grupo in grupos %}
 <h2 class="h6 text-muted mt-4 mb-2">{{ grupo.titulo }}</h2>
 <div class="card border-0 shadow-sm mb-1">
-  {% for i in grupo.items %}
+  {% for i in grupo.notificaciones %}
   {% set cont = contenedores_por_id.get(i.id_contenedor) %}
   {% set recolector = usuarios_por_id.get(i.id_usuario) %}
   {% set pendiente = i.estado.estado != 'atendido' %}
@@ -75,20 +75,86 @@
         </div>
         <span class="small text-muted text-nowrap">{{ i.tiempo_relativo }}</span>
       </div>
-      {% if i.comentario %}
-      <p class="small text-muted mb-1 mt-1">{{ i.comentario }}</p>
-      {% endif %}
       <div class="d-flex justify-content-between align-items-center mt-1">
         <span class="small text-muted">
           Reportó: {% if recolector %}{{ recolector.nombre }} {{ recolector.apellido_paterno }}{% else %}—{% endif %}
         </span>
-        {% if pendiente %}
-        <form method="post" action="{{ url_for('notificaciones.atender_incidencia', incidencia_id=i.id, estado=estado_filtro, motivo=motivo_filtro) }}" class="d-inline">
-          <button type="submit" class="btn btn-sm btn-outline-primary">Marcar atendida</button>
-        </form>
-        {% else %}
-        <span class="badge text-bg-secondary">Atendida</span>
-        {% endif %}
+        <div class="d-flex gap-1 align-items-center">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalDetalleNotif{{ i.id }}">Detalles</button>
+          {% if pendiente %}
+          <form method="post" action="{{ url_for('notificaciones.atender_incidencia', incidencia_id=i.id, estado=estado_filtro, motivo=motivo_filtro) }}" class="d-none" id="form-atender-{{ i.id }}"></form>
+          <button type="button" class="btn btn-sm btn-outline-primary"
+                  data-confirm-action="form-atender-{{ i.id }}"
+                  data-confirm-titulo="Marcar como atendida"
+                  data-confirm-mensaje="¿Marcar esta notificación como atendida?"
+                  data-confirm-boton="Marcar atendida">
+            Marcar atendida
+          </button>
+          {% else %}
+          <span class="badge text-bg-secondary">Atendida</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ===================== Modal de detalles ===================== #}
+  <div class="modal fade" id="modalDetalleNotif{{ i.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title fs-5">{{ i.motivo.motivo }}</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-sm mb-3">
+            <tbody>
+              <tr>
+                <th class="text-muted fw-normal" style="width: 35%;">Contenedor</th>
+                <td>
+                  {% if cont %}
+                  {{ cont.nombre }} <code class="small">{{ cont.codigo_contenedor }}</code><br>
+                  <span class="small text-muted">{{ cont.sector.zona.nombre }} / {{ cont.sector.nombre }}</span>
+                  {% else %}
+                  Contenedor #{{ i.id_contenedor }}
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <th class="text-muted fw-normal">Reportó</th>
+                <td>{% if recolector %}{{ recolector.nombre }} {{ recolector.apellido_paterno }} <span class="small text-muted">({{ recolector.codigo_usuario }})</span>{% else %}—{% endif %}</td>
+              </tr>
+              <tr>
+                <th class="text-muted fw-normal">Fecha y hora</th>
+                <td>{{ i.fecha_hora }}</td>
+              </tr>
+              <tr>
+                <th class="text-muted fw-normal">Estado</th>
+                <td>
+                  {% if pendiente %}
+                  <span class="badge bg-danger">Pendiente</span>
+                  {% else %}
+                  <span class="badge text-bg-secondary">Atendida</span>
+                  {% endif %}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <h3 class="h6">Comentario</h3>
+          <p class="mb-0">{{ i.comentario or 'Sin comentario adicional.' }}</p>
+        </div>
+        <div class="modal-footer">
+          {% if pendiente %}
+          <button type="button" class="btn btn-outline-primary"
+                  data-confirm-action="form-atender-{{ i.id }}"
+                  data-confirm-titulo="Marcar como atendida"
+                  data-confirm-mensaje="¿Marcar esta notificación como atendida?"
+                  data-confirm-boton="Marcar atendida">
+            Marcar atendida
+          </button>
+          {% endif %}
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
       </div>
     </div>
   </div>

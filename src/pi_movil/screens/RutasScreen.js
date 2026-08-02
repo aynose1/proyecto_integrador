@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { SafeAreaView, FlatList, Text, Pressable, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
+import { SafeAreaView, View, FlatList, Text, Pressable, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 
 import { colors } from '../theme';
@@ -51,7 +51,7 @@ export default function RutasScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.safe}>
       <Header title="Rutas" />
       <FlatList
         data={rutas}
@@ -83,7 +83,7 @@ export default function RutasScreen() {
           </Pressable>
         )}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

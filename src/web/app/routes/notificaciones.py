@@ -82,7 +82,7 @@ def _agrupar_por_fecha(incidencias: list[dict]) -> list[dict]:
         else:
             franjas["Más antiguo"].append(inc)
 
-    return [{"titulo": titulo, "items": items} for titulo, items in franjas.items() if items]
+    return [{"titulo": titulo, "notificaciones": items} for titulo, items in franjas.items() if items]
 
 
 def _preparar_incidencias(incidencias: list[dict]) -> list[dict]:

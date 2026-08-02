@@ -93,7 +93,7 @@ export default function EscaneoRapidoScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.safe}>
       <Header title="Escaneo Rápido" />
 
       <View style={styles.cameraWrapper}>
@@ -169,7 +169,7 @@ export default function EscaneoRapidoScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 

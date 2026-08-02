@@ -99,7 +99,7 @@ export default function ReportarScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.safe}>
       <Header title="Reportar" />
 
       <View style={styles.cameraWrapper}>
@@ -182,7 +182,7 @@ export default function ReportarScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
