@@ -36,8 +36,20 @@ class ContenedorCritico(BaseModel):
     nombre: str
     codigo_contenedor: str
     nivel_actual: float
+    peso_pct: float
     zona: str
     sector: str
+
+
+class SectorConteo(BaseModel):
+    nombre: str
+    total_contenedores: int
+
+
+class ZonaConSectores(BaseModel):
+    zona: str
+    total_contenedores: int
+    sectores: list[SectorConteo]
 
 
 class RecoleccionDia(BaseModel):
@@ -72,6 +84,7 @@ class DashboardResumen(BaseModel):
     distribucion_nivel: DistribucionNivel
     distribucion_peso: DistribucionNivel
     promedio_por_zona: list[PromedioZona]
+    zonas_con_sectores: list[ZonaConSectores]
     recolecciones_por_dia_semana: list[RecoleccionDia]
     tendencia_7_dias: list[TendenciaDia]
     recolectores_hoy: list[RecolectorHoy]

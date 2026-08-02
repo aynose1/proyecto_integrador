@@ -4,61 +4,96 @@
 {% block content %}
 <div class="page-header">
   <h1 class="h3 mb-1">Notificaciones</h1>
-  <p class="text-muted mb-0">Incidencias reportadas por los recolectores.</p>
 </div>
 {% include "_flash_messages.html" %}
 
-<div class="card border-0 shadow-sm mt-4">
-  <div class="table-responsive">
-    <table class="table table-hover mb-0 align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>Contenedor</th>
-          <th>Motivo</th>
-          <th>Comentario</th>
-          <th>Reportó</th>
-          <th>Fecha</th>
-          <th>Estado</th>
-          <th class="text-end">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for i in incidencias %}
-        {% set cont = contenedores_por_id.get(i.id_contenedor) %}
-        {% set recolector = usuarios_por_id.get(i.id_usuario) %}
-        <tr>
-          <td>
-            {% if cont %}
-            {{ cont.nombre }}
-            <div class="small text-muted"><code>{{ cont.codigo_contenedor }}</code></div>
-            {% else %}
-            <span class="text-muted">Contenedor #{{ i.id_contenedor }}</span>
-            {% endif %}
-          </td>
-          <td>{{ i.motivo.motivo }}</td>
-          <td class="small">{{ i.comentario or '—' }}</td>
-          <td>{% if recolector %}{{ recolector.nombre }} {{ recolector.apellido_paterno }}{% else %}—{% endif %}</td>
-          <td class="small text-muted">{{ i.fecha_hora }}</td>
-          <td>
-            {% if i.estado.estado == 'atendido' %}
-            <span class="badge text-bg-secondary">Atendida</span>
-            {% else %}
-            <span class="badge bg-danger">Pendiente</span>
-            {% endif %}
-          </td>
-          <td class="text-end">
-            {% if i.estado.estado != 'atendido' %}
-            <form method="post" action="{{ url_for('notificaciones.atender_incidencia', incidencia_id=i.id) }}" class="d-inline">
-              <button type="submit" class="btn btn-sm btn-outline-primary">Marcar atendida</button>
-            </form>
-            {% endif %}
-          </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="7" class="text-center text-muted py-4">No hay incidencias reportadas.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{# ===================== Filtros ===================== #}
+<div class="card border-0 shadow-sm mt-4 mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-6 col-md-3">
+        <label class="form-label small mb-1" for="filtroEstadoNotif">Estado</label>
+        <select class="form-select form-select-sm" id="filtroEstadoNotif" name="estado" onchange="this.form.submit()">
+          <option value="">Todas</option>
+          <option value="pendiente" {% if estado_filtro == 'pendiente' %}selected{% endif %}>Pendientes</option>
+          <option value="atendido" {% if estado_filtro == 'atendido' %}selected{% endif %}>Atendidas</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label small mb-1" for="filtroMotivoNotif">Motivo</label>
+        <select class="form-select form-select-sm" id="filtroMotivoNotif" name="motivo" onchange="this.form.submit()">
+          <option value="">Todos</option>
+          {% for m in motivos_disponibles %}
+          <option value="{{ m }}" {% if motivo_filtro == m %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <span class="small text-muted">{{ total }} notificación{{ 'es' if total != 1 else '' }}</span>
+      </div>
+      {% if estado_filtro or motivo_filtro %}
+      <div class="col-6 col-md-3 text-md-end">
+        <a href="{{ url_for('notificaciones.listar') }}" class="btn btn-sm btn-outline-secondary">Limpiar filtros</a>
+      </div>
+      {% endif %}
+    </form>
   </div>
 </div>
+
+{# ===================== Centro de notificaciones ===================== #}
+{% if not grupos %}
+<div class="empty-state card border-0 shadow-sm">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-bell-slash display-4 text-muted"></i>
+    <h2 class="h5 mt-3">Sin notificaciones</h2>
+    <p class="text-muted mb-0">
+      {% if estado_filtro or motivo_filtro %}Ninguna coincide con los filtros seleccionados.{% else %}No hay incidencias reportadas todavía.{% endif %}
+    </p>
+  </div>
+</div>
+{% else %}
+{% for grupo in grupos %}
+<h2 class="h6 text-muted mt-4 mb-2">{{ grupo.titulo }}</h2>
+<div class="card border-0 shadow-sm mb-1">
+  {% for i in grupo.items %}
+  {% set cont = contenedores_por_id.get(i.id_contenedor) %}
+  {% set recolector = usuarios_por_id.get(i.id_usuario) %}
+  {% set pendiente = i.estado.estado != 'atendido' %}
+  <div class="notif-item {% if pendiente %}notif-item--pendiente{% endif %} {% if not loop.last %}border-bottom{% endif %}">
+    <div class="notif-item__icono {% if pendiente %}notif-item__icono--pendiente{% endif %}">
+      <i class="bi {{ i.icono }}"></i>
+    </div>
+    <div class="notif-item__cuerpo">
+      <div class="d-flex justify-content-between align-items-start gap-2">
+        <div>
+          <span class="notif-item__titulo">{{ i.motivo.motivo }}</span>
+          {% if cont %}
+          <span class="text-muted"> — {{ cont.nombre }} <code class="small">{{ cont.codigo_contenedor }}</code></span>
+          {% else %}
+          <span class="text-muted"> — Contenedor #{{ i.id_contenedor }}</span>
+          {% endif %}
+        </div>
+        <span class="small text-muted text-nowrap">{{ i.tiempo_relativo }}</span>
+      </div>
+      {% if i.comentario %}
+      <p class="small text-muted mb-1 mt-1">{{ i.comentario }}</p>
+      {% endif %}
+      <div class="d-flex justify-content-between align-items-center mt-1">
+        <span class="small text-muted">
+          Reportó: {% if recolector %}{{ recolector.nombre }} {{ recolector.apellido_paterno }}{% else %}—{% endif %}
+        </span>
+        {% if pendiente %}
+        <form method="post" action="{{ url_for('notificaciones.atender_incidencia', incidencia_id=i.id, estado=estado_filtro, motivo=motivo_filtro) }}" class="d-inline">
+          <button type="submit" class="btn btn-sm btn-outline-primary">Marcar atendida</button>
+        </form>
+        {% else %}
+        <span class="badge text-bg-secondary">Atendida</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+{% endif %}
 {% endblock %}

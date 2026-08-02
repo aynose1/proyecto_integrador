@@ -441,7 +441,7 @@ thead.table-light th,
 }
 
 .page-header p.text-muted {
-  color: var(--brand-aqua-300) !important;
+  display: none;
 }
 
 .page-header-actions {
@@ -557,6 +557,93 @@ thead.table-light th,
 
 .btn-ubicacion-mapa:hover {
   background: var(--brand-aqua-100);
+}
+
+/* ---------- Centro de notificaciones ---------- */
+.notif-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  align-items: flex-start;
+}
+
+.notif-item--pendiente {
+  background: var(--brand-aqua-100);
+}
+
+.notif-item__icono {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--page-bg);
+  color: var(--ink-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.notif-item__icono--pendiente {
+  background: var(--brand-teal-700);
+  color: #ffffff;
+}
+
+.notif-item__cuerpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-item__titulo {
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+/* ---------- Badge de pendientes en el sidebar ---------- */
+.sidebar__badge {
+  margin-left: auto;
+  background: var(--danger, #bf4a40);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 7px;
+  line-height: 1.4;
+}
+
+/* ---------- Tablero (kanban) de Rutas ---------- */
+.tarjeta-kanban-ruta {
+  cursor: pointer;
+  border-color: var(--border-soft) !important;
+  transition: box-shadow 0.15s ease;
+}
+
+.tarjeta-kanban-ruta:hover {
+  box-shadow: 0 2px 8px rgba(11, 59, 56, 0.12);
+}
+
+/* ---------- Línea de tiempo de Rutas ---------- */
+.fila-timeline {
+  position: relative;
+  height: 34px;
+  background: var(--page-bg);
+  border-radius: 6px;
+}
+
+.bloque-timeline-ruta {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .nav-tabs .nav-link {

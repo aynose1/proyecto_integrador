@@ -13,7 +13,28 @@
   </button>
 </div>
 
-<div class="card border-0 shadow-sm mt-4">
+{# ===================== Filtros ===================== #}
+<div class="card border-0 shadow-sm mt-4 mb-3">
+  <div class="card-body py-2">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-6">
+        <label class="form-label small mb-1" for="buscadorUsuarios">Buscar</label>
+        <input type="text" class="form-control form-control-sm" id="buscadorUsuarios" placeholder="Nombre o código...">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small mb-1" for="filtroTipoUsuario">Tipo de usuario</label>
+        <select class="form-select form-select-sm" id="filtroTipoUsuario">
+          <option value="">Todos los tipos</option>
+          {% for t in tipos_usuario %}
+          <option value="{{ t.tipo|lower }}">{{ t.tipo|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
   <div class="table-responsive">
     <table class="table table-hover mb-0 align-middle">
       <thead class="table-light">
@@ -26,9 +47,10 @@
       </thead>
       <tbody>
         {% for u in usuarios %}
-        <tr>
+        {% set nombre_completo = u.nombre ~ ' ' ~ u.apellido_paterno ~ (' ' ~ u.apellido_materno if u.apellido_materno else '') %}
+        <tr class="usuario-item-filtrable" data-tipo="{{ u.tipo_usuario.tipo|lower }}" data-buscar="{{ (nombre_completo ~ ' ' ~ u.codigo_usuario)|lower }}">
           <td><code>{{ u.codigo_usuario }}</code></td>
-          <td>{{ u.nombre }} {{ u.apellido_paterno }}{% if u.apellido_materno %} {{ u.apellido_materno }}{% endif %}</td>
+          <td>{{ nombre_completo }}</td>
           <td><span class="badge text-bg-secondary">{{ u.tipo_usuario.tipo|capitalize }}</span></td>
           <td class="text-end">
             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalUsuarioEditar{{ u.id }}">Editar</button>
@@ -42,6 +64,7 @@
       </tbody>
     </table>
   </div>
+  <p class="text-muted text-center py-4 d-none mb-0" id="sinResultadosUsuarios">Ningún usuario coincide con los filtros.</p>
 </div>
 
 {# Modal crear #}
@@ -142,4 +165,26 @@
   </div>
 </div>
 {% endfor %}
+
+<script>
+  function aplicarFiltrosUsuarios() {
+    const texto = (document.getElementById('buscadorUsuarios').value || '').toLowerCase().trim();
+    const tipo = document.getElementById('filtroTipoUsuario').value;
+
+    const filas = document.querySelectorAll('.usuario-item-filtrable');
+    let visibles = 0;
+    filas.forEach(function (fila) {
+      const coincideTexto = !texto || fila.dataset.buscar.includes(texto);
+      const coincideTipo = !tipo || fila.dataset.tipo === tipo;
+      const coincide = coincideTexto && coincideTipo;
+      fila.classList.toggle('d-none', !coincide);
+      if (coincide) visibles++;
+    });
+
+    document.getElementById('sinResultadosUsuarios').classList.toggle('d-none', visibles > 0 || filas.length === 0);
+  }
+
+  document.getElementById('buscadorUsuarios').addEventListener('input', aplicarFiltrosUsuarios);
+  document.getElementById('filtroTipoUsuario').addEventListener('change', aplicarFiltrosUsuarios);
+</script>
 {% endblock %}

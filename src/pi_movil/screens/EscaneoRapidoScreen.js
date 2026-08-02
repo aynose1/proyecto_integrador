@@ -4,10 +4,11 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect } from 'expo-router';
 
 import { colors } from '../theme';
+import Header from '../components/Header';
 import NivelBar from '../components/NivelBar';
 import { buscarRutaPorContenedor, marcarRecolectado } from '../services/rutasService';
 
-export default function EscanearScreen() {
+export default function EscaneoRapidoScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [activo, setActivo] = useState(true);
   const [buscando, setBuscando] = useState(false);
@@ -93,6 +94,8 @@ export default function EscanearScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Header title="Escaneo Rápido" />
+
       <View style={styles.cameraWrapper}>
         <CameraView
           style={StyleSheet.absoluteFillObject}
@@ -171,12 +174,12 @@ export default function EscanearScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#000000' },
+  safe: { flex: 1, backgroundColor: colors.surface },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.pageBg, padding: 24 },
   permisoTexto: { fontSize: 15, color: colors.ink900, textAlign: 'center', marginBottom: 16 },
   permisoBoton: { backgroundColor: colors.brandTeal700, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24 },
   permisoBotonTexto: { color: '#fff', fontWeight: '700' },
-  cameraWrapper: { flex: 1 },
+  cameraWrapper: { flex: 1, backgroundColor: '#000000' },
   overlay: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   frame: { width: 240, height: 240, borderWidth: 3, borderColor: colors.brandAqua500, borderRadius: 16 },
   overlayText: { color: '#ffffff', marginTop: 16, fontSize: 14, fontWeight: '600' },

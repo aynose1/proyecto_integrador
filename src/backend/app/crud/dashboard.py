@@ -131,6 +131,42 @@ def _promedio_por_zona(contenedores: list[Contenedor], niveles: dict[int, float]
     ]
 
 
+def _zonas_con_sectores(contenedores: list[Contenedor]) -> list[dict]:
+    """
+    Para 'Zonas monitoreadas' en el dashboard: cada zona con el
+    desglose de sus sectores y cuántos contenedores tiene cada uno --
+    a diferencia de _promedio_por_zona (que agrega directo a nivel de
+    zona, para la gráfica de barras), esto conserva el nivel intermedio
+    de sector para la lista desplegable.
+    """
+    zonas: dict[str, dict] = {}
+    orden: list[str] = []
+    for c in contenedores:
+        zona_nombre = c.sector.zona.nombre
+        sector_nombre = c.sector.nombre
+        if zona_nombre not in zonas:
+            zonas[zona_nombre] = {"total": 0, "sectores": {}}
+            orden.append(zona_nombre)
+        zonas[zona_nombre]["total"] += 1
+        zonas[zona_nombre]["sectores"][sector_nombre] = zonas[zona_nombre]["sectores"].get(sector_nombre, 0) + 1
+
+    resultado = []
+    for zona_nombre in sorted(orden):
+        z = zonas[zona_nombre]
+        resultado.append(
+            {
+                "zona": zona_nombre,
+                "total_contenedores": z["total"],
+                "sectores": [
+                    {"nombre": sector_nombre, "total_contenedores": total}
+                    for sector_nombre, total in sorted(z["sectores"].items())
+                ],
+            }
+        )
+    return resultado
+
+
+
 def _recolecciones_por_dia_semana(db: Session, fecha: date_type) -> list[dict]:
     """
     Cuenta cuántos contenedores se marcaron 'recolectado', agrupados por
@@ -186,17 +222,28 @@ def _recolectores_hoy(db: Session, fecha: date_type) -> list[dict]:
     return resultado
 
 
-def _contenedores_criticos(contenedores: list[Contenedor], niveles: dict[int, float]) -> list[dict]:
+def _contenedores_criticos(
+    contenedores: list[Contenedor], niveles: dict[int, float], pesos_pct: dict[int, float]
+) -> list[dict]:
+    """
+    A petición explícita: aquí YA NO es "nivel O peso" (el criterio
+    'peor caso' que se usa en los mapas) -- un contenedor solo entra a
+    esta lista si NIVEL Y PESO están ambos en zona crítica al mismo
+    tiempo. Un contenedor sin lectura de peso (nunca tocado por el
+    sensor de peso) no puede calificar, aunque su nivel sea altísimo.
+    """
     criticos = []
     for c in contenedores:
         nivel = niveles.get(c.id)
-        if nivel is not None and nivel >= UMBRAL_ALTO:
+        peso = pesos_pct.get(c.id)
+        if nivel is not None and peso is not None and nivel >= UMBRAL_ALTO and peso >= UMBRAL_ALTO:
             criticos.append(
                 {
                     "id": c.id,
                     "nombre": c.nombre,
                     "codigo_contenedor": c.codigo_contenedor,
                     "nivel_actual": nivel,
+                    "peso_pct": round(peso, 1),
                     "zona": c.sector.zona.nombre,
                     "sector": c.sector.nombre,
                 }
@@ -311,8 +358,9 @@ def resumen(db: Session, fecha: date_type) -> dict:
         "distribucion_nivel": _distribucion(niveles_lista),
         "distribucion_peso": _distribucion(pesos_pct_lista),
         "promedio_por_zona": _promedio_por_zona(contenedores, niveles),
+        "zonas_con_sectores": _zonas_con_sectores(contenedores),
         "recolecciones_por_dia_semana": _recolecciones_por_dia_semana(db, fecha),
         "tendencia_7_dias": _tendencia_7_dias(db, fecha, contenedores),
         "recolectores_hoy": _recolectores_hoy(db, fecha),
-        "contenedores_criticos": _contenedores_criticos(contenedores, niveles),
+        "contenedores_criticos": _contenedores_criticos(contenedores, niveles, pesos_pct),
     }

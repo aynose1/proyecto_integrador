@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, session
 
 from app.config import Config
 
@@ -11,6 +11,7 @@ def create_app(config_class=Config) -> Flask:
     from app.routes.contenedores import bp as contenedores_bp
     from app.routes.dashboard import bp as dashboard_bp
     from app.routes.notificaciones import bp as notificaciones_bp
+    from app.routes.notificaciones import contar_pendientes
     from app.routes.reportes import bp as reportes_bp
     from app.routes.rutas import bp as rutas_bp
     from app.routes.ubicaciones import bp as ubicaciones_bp
@@ -27,6 +28,9 @@ def create_app(config_class=Config) -> Flask:
 
     @app.context_processor
     def inject_globals():
-        return {"app_name": "Echo-Bin"}
+        # Badge del sidebar: solo se consulta si ya hay sesión iniciada,
+        # para no gastar una llamada a la API en cada vista de login/registro.
+        pendientes = contar_pendientes() if session.get("access_token") else 0
+        return {"app_name": "Echo-Bin", "notificaciones_pendientes_count": pendientes}
 
     return app

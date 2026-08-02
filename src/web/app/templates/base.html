@@ -42,8 +42,11 @@
         <a class="sidebar__link {% if request.endpoint and request.endpoint.startswith('ubicaciones.') %}active{% endif %}" href="{{ url_for('ubicaciones.listar') }}">
           <i class="bi bi-geo-alt"></i> Ubicaciones
         </a>
-        <a class="sidebar__link {% if request.endpoint and request.endpoint.startswith('notificaciones.') %}active{% endif %}" href="{{ url_for('notificaciones.listar') }}">
+        <a class="sidebar__link d-flex align-items-center {% if request.endpoint and request.endpoint.startswith('notificaciones.') %}active{% endif %}" href="{{ url_for('notificaciones.listar') }}">
           <i class="bi bi-bell"></i> Notificaciones
+          {% if notificaciones_pendientes_count and notificaciones_pendientes_count > 0 %}
+          <span class="sidebar__badge">{{ notificaciones_pendientes_count }}</span>
+          {% endif %}
         </a>
         <a class="sidebar__link {% if request.endpoint and request.endpoint.startswith('usuarios.') %}active{% endif %}" href="{{ url_for('usuarios.listar') }}">
           <i class="bi bi-people"></i> Usuarios

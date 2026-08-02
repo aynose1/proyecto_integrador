@@ -30,11 +30,13 @@ def listar():
     try:
         contenedores = api_request("get", "/contenedores")
         sectores = api_request("get", "/sectores")
+        zonas = api_request("get", "/zonas")
         estados = _estados_contenedor(api_request("get", "/catalogos/estados"))
     except APIError as exc:
         flash(exc.message, "danger")
         contenedores = []
         sectores = []
+        zonas = []
         estados = []
 
     estado_activo = next((e for e in estados if e["estado"].lower() == "activo"), None)
@@ -44,6 +46,7 @@ def listar():
         "contenedores/list.html",
         contenedores=contenedores,
         sectores=sectores,
+        zonas=zonas,
         estados=estados,
         estado_activo_id=estado_activo["id"] if estado_activo else None,
         estado_inactivo_id=estado_inactivo["id"] if estado_inactivo else None,
@@ -106,7 +109,7 @@ def eliminar(contenedor_id: int):
 @bp.route("/<int:contenedor_id>/estado", methods=["POST"])
 @admin_required
 def cambiar_estado(contenedor_id: int):
-    """Switch rápido activo/inactivo desde la tabla, sin abrir el modal de edición."""
+    """Switch rápido activo/inactivo desde la tarjeta, sin abrir el modal de edición."""
     id_estado = request.form.get("id_estado", type=int)
     if not id_estado:
         flash("No se pudo determinar el nuevo estado.", "danger")

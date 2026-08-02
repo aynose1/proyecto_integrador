@@ -13,11 +13,12 @@
   </button>
 </div>
 
-{# ===================== Filtros + selector de vista ===================== #}
+{# ===================== Filtros ===================== #}
 <div class="card border-0 shadow-sm mt-4 mb-3">
   <div class="card-body py-2">
-    <div class="row g-2 align-items-center">
-      <div class="col-6 col-md-3">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-md-2">
+        <label class="form-label small mb-1" for="filtroEstadoContenedor">Estado</label>
         <select class="form-select form-select-sm" id="filtroEstadoContenedor">
           <option value="">Todos los estados</option>
           {% for e in estados %}
@@ -25,29 +26,34 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-2">
+        <label class="form-label small mb-1" for="filtroZonaContenedor">Zona</label>
+        <select class="form-select form-select-sm" id="filtroZonaContenedor">
+          <option value="">Todas las zonas</option>
+          {% for z in zonas %}
+          <option value="{{ z.id }}">{{ z.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small mb-1" for="filtroSectorContenedor">Sector</label>
         <select class="form-select form-select-sm" id="filtroSectorContenedor">
           <option value="">Todos los sectores</option>
           {% for s in sectores %}
-          <option value="{{ s.id }}">{{ s.zona.nombre }} / {{ s.nombre }}</option>
+          <option value="{{ s.id }}" data-zona="{{ s.zona.id }}">{{ s.zona.nombre }} / {{ s.nombre }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="col-6 col-md-3">
-        <div class="form-check">
+        <div class="form-check mb-1">
           <input class="form-check-input" type="checkbox" id="filtroSoloCriticos">
-          <label class="form-check-label small" for="filtroSoloCriticos">Solo críticos (&ge;80%)</label>
+          <label class="form-check-label small" for="filtroSoloCriticos">Solo críticos</label>
         </div>
       </div>
-      <div class="col-6 col-md-3 text-end">
-        <div class="btn-group btn-group-sm" role="group" aria-label="Vista">
-          <button type="button" class="btn btn-outline-secondary" id="btnVistaTarjetas" onclick="cambiarVistaContenedores('tarjetas')">
-            <i class="bi bi-grid-3x3-gap"></i> Tarjetas
-          </button>
-          <button type="button" class="btn btn-outline-secondary" id="btnVistaTabla" onclick="cambiarVistaContenedores('tabla')">
-            <i class="bi bi-table"></i> Tabla
-          </button>
-        </div>
+      <div class="col-6 col-md-3 text-md-end">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.location.reload()" title="Vuelve a consultar la base de datos por si ya llegaron lecturas nuevas">
+          <i class="bi bi-arrow-clockwise"></i> Actualizar lecturas
+        </button>
       </div>
     </div>
   </div>
@@ -65,6 +71,7 @@
   {% set es_critico = nivel >= 80 or peso_pct >= 80 %}
   <div class="col contenedor-item-filtrable"
        data-estado="{{ c.estado.estado|lower }}"
+       data-zona="{{ c.sector.zona.id }}"
        data-sector="{{ c.sector.id }}"
        data-critico="{{ '1' if es_critico else '0' }}">
     <div class="card border-0 shadow-sm h-100">
@@ -74,11 +81,17 @@
             <div class="fw-semibold">{{ c.nombre }}</div>
             <div class="small text-muted"><code>{{ c.codigo_contenedor }}</code></div>
           </div>
-          {% if es_activo %}
-          <span class="badge bg-success">Activo</span>
-          {% else %}
-          <span class="badge text-bg-secondary">Inactivo</span>
-          {% endif %}
+          <form method="post" action="{{ url_for('contenedores.cambiar_estado', contenedor_id=c.id) }}" class="d-inline">
+            <input type="hidden" name="id_estado" value="{{ estado_inactivo_id if es_activo else estado_activo_id }}">
+            <div class="form-check form-switch mb-0" title="{{ 'Desactivar' if es_activo else 'Activar' }} contenedor">
+              <input class="form-check-input" type="checkbox" role="switch"
+                     id="switch_estado_card_{{ c.id }}" {{ 'checked' if es_activo }}
+                     onchange="this.form.submit()" {{ 'disabled' if not estado_activo_id or not estado_inactivo_id }}>
+              <label class="form-check-label small" for="switch_estado_card_{{ c.id }}">
+                {{ 'Activo' if es_activo else 'Inactivo' }}
+              </label>
+            </div>
+          </form>
         </div>
         <div class="small text-muted mb-2">{{ c.sector.zona.nombre }} / {{ c.sector.nombre }}</div>
 
@@ -116,74 +129,6 @@
   {% endfor %}
 </div>
 <p class="text-muted text-center py-4 d-none" id="sinResultadosTarjetas">Ningún contenedor coincide con los filtros.</p>
-
-{# ===================== Vista de tabla ===================== #}
-<div id="vistaTablaContenedores" class="card border-0 shadow-sm mb-3 d-none">
-  <div class="table-responsive">
-    <table class="table table-hover mb-0 align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Sector (Zona/Sector)</th>
-          <th>Nivel actual</th>
-          <th>Peso actual</th>
-          <th>Estado</th>
-          <th class="text-end">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for c in contenedores %}
-        {% set nivel = c.nivel_actual|float %}
-        {% set peso = c.peso_actual|float %}
-        {% set capacidad = c.capacidad_max|float %}
-        {% set peso_pct = (peso / capacidad * 100) if capacidad > 0 else 0 %}
-        {% set es_activo = c.estado.estado|lower == 'activo' %}
-        {% set es_critico = nivel >= 80 or peso_pct >= 80 %}
-        <tr class="contenedor-item-filtrable" data-estado="{{ c.estado.estado|lower }}" data-sector="{{ c.sector.id }}" data-critico="{{ '1' if es_critico else '0' }}">
-          <td><code>{{ c.codigo_contenedor }}</code></td>
-          <td>{{ c.nombre }}</td>
-          <td>{{ c.sector.zona.nombre }} / {{ c.sector.nombre }}</td>
-          <td style="min-width: 180px;">
-            <div class="d-flex align-items-center gap-2">
-              <div class="progress flex-grow-1 nivel-bar" role="progressbar">
-                <div class="progress-bar {% if nivel >= 80 %}bg-danger{% elif nivel >= 50 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ nivel }}%"></div>
-              </div>
-              <span class="small fw-semibold">{{ nivel }}%</span>
-            </div>
-            {% if c.altura_cm is none %}
-            <span class="badge bg-warning text-dark mt-1" title="El sensor de este contenedor no podrá mandar lecturas hasta configurarla">Falta altura</span>
-            {% endif %}
-          </td>
-          <td>{{ c.peso_actual }} Kg</td>
-          <td>
-            <form method="post" action="{{ url_for('contenedores.cambiar_estado', contenedor_id=c.id) }}" class="d-inline">
-              <input type="hidden" name="id_estado" value="{{ estado_inactivo_id if es_activo else estado_activo_id }}">
-              <div class="form-check form-switch mb-0" title="{{ 'Desactivar' if es_activo else 'Activar' }} contenedor">
-                <input class="form-check-input" type="checkbox" role="switch"
-                       id="switch_estado_{{ c.id }}" {{ 'checked' if es_activo }}
-                       onchange="this.form.submit()" {{ 'disabled' if not estado_activo_id or not estado_inactivo_id }}>
-                <label class="form-check-label small" for="switch_estado_{{ c.id }}">
-                  {{ 'Activo' if es_activo else 'Inactivo' }}
-                </label>
-              </div>
-            </form>
-          </td>
-          <td class="text-end">
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalContenedorVer{{ c.id }}">Ver</button>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalContenedorEditar{{ c.id }}">Editar</button>
-            <form method="post" action="{{ url_for('contenedores.eliminar', contenedor_id=c.id) }}" class="d-none" id="form-eliminar-contenedor-tabla-{{ c.id }}"></form>
-            <button type="button" class="btn btn-sm btn-outline-danger" data-confirm-delete="form-eliminar-contenedor-tabla-{{ c.id }}" data-confirm-nombre="el contenedor &quot;{{ c.nombre }}&quot;">Eliminar</button>
-          </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="7" class="text-center text-muted py-4">No hay contenedores registrados.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-<p class="text-muted text-center py-4 d-none" id="sinResultadosTabla">Ningún contenedor coincide con los filtros.</p>
 
 {# Modal crear #}
 <div class="modal fade" id="modalContenedorNuevo" tabindex="-1" aria-hidden="true">
@@ -386,55 +331,49 @@
 {% endfor %}
 
 <script>
-  // ===================== Vista Tarjetas/Tabla + filtros =====================
-  function cambiarVistaContenedores(vista) {
-    const tarjetas = document.getElementById('vistaTarjetasContenedores');
-    const tabla = document.getElementById('vistaTablaContenedores');
-    const btnTarjetas = document.getElementById('btnVistaTarjetas');
-    const btnTabla = document.getElementById('btnVistaTabla');
-
-    if (vista === 'tabla') {
-      tarjetas.classList.add('d-none');
-      tabla.classList.remove('d-none');
-      btnTabla.classList.add('active');
-      btnTarjetas.classList.remove('active');
-    } else {
-      tabla.classList.add('d-none');
-      tarjetas.classList.remove('d-none');
-      btnTarjetas.classList.add('active');
-      btnTabla.classList.remove('active');
-    }
-    aplicarFiltrosContenedores();
-  }
-
+  // ===================== Filtros (única vista: Tarjetas) =====================
   function aplicarFiltrosContenedores() {
     const estado = document.getElementById('filtroEstadoContenedor').value;
+    const zona = document.getElementById('filtroZonaContenedor').value;
     const sector = document.getElementById('filtroSectorContenedor').value;
     const soloCriticos = document.getElementById('filtroSoloCriticos').checked;
 
-    const vistaTarjetasVisible = !document.getElementById('vistaTarjetasContenedores').classList.contains('d-none');
-    const contenedorActivo = vistaTarjetasVisible ? document.getElementById('vistaTarjetasContenedores') : document.getElementById('vistaTablaContenedores');
-    const items = contenedorActivo.querySelectorAll('.contenedor-item-filtrable');
+    const items = document.querySelectorAll('#vistaTarjetasContenedores .contenedor-item-filtrable');
 
     let visibles = 0;
     items.forEach(function (item) {
       const coincideEstado = !estado || item.dataset.estado === estado;
+      const coincideZona = !zona || item.dataset.zona === zona;
       const coincideSector = !sector || item.dataset.sector === sector;
       const coincideCritico = !soloCriticos || item.dataset.critico === '1';
-      const coincide = coincideEstado && coincideSector && coincideCritico;
+      const coincide = coincideEstado && coincideZona && coincideSector && coincideCritico;
       item.classList.toggle('d-none', !coincide);
       if (coincide) visibles++;
     });
 
-    const idMensaje = vistaTarjetasVisible ? 'sinResultadosTarjetas' : 'sinResultadosTabla';
-    document.getElementById(idMensaje).classList.toggle('d-none', visibles > 0 || items.length === 0);
+    document.getElementById('sinResultadosTarjetas').classList.toggle('d-none', visibles > 0 || items.length === 0);
+  }
+
+  // Elegir una zona acota las opciones del select de Sector, para no
+  // dejar elegir un sector que no pertenece a la zona ya elegida.
+  function actualizarOpcionesSectorPorZona() {
+    const zona = document.getElementById('filtroZonaContenedor').value;
+    const selectSector = document.getElementById('filtroSectorContenedor');
+    Array.from(selectSector.options).forEach(function (opt) {
+      if (!opt.value) return; // "Todos los sectores" siempre visible
+      opt.hidden = !!zona && opt.dataset.zona !== zona;
+    });
+    if (selectSector.selectedOptions[0] && selectSector.selectedOptions[0].hidden) {
+      selectSector.value = '';
+    }
   }
 
   document.getElementById('filtroEstadoContenedor').addEventListener('change', aplicarFiltrosContenedores);
+  document.getElementById('filtroZonaContenedor').addEventListener('change', function () {
+    actualizarOpcionesSectorPorZona();
+    aplicarFiltrosContenedores();
+  });
   document.getElementById('filtroSectorContenedor').addEventListener('change', aplicarFiltrosContenedores);
   document.getElementById('filtroSoloCriticos').addEventListener('change', aplicarFiltrosContenedores);
-
-  // Vista por defecto: Tarjetas
-  cambiarVistaContenedores('tarjetas');
 </script>
 {% endblock %}

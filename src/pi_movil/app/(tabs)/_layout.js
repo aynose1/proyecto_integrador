@@ -21,17 +21,17 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="escanear"
+        name="escaneo"
         options={{
-          title: 'Escanear QR',
+          title: 'Escaneo Rápido',
           tabBarIcon: ({ color, size }) => <Ionicons name="qr-code-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="perfil"
+        name="reportar"
         options={{
-          title: 'Perfil',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
+          title: 'Reportar',
+          tabBarIcon: ({ color, size }) => <Ionicons name="flag-outline" size={size} color={color} />,
         }}
       />
     </Tabs>

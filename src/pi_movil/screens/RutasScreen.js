@@ -3,6 +3,7 @@ import { SafeAreaView, FlatList, Text, Pressable, ActivityIndicator, RefreshCont
 import { useRouter, useFocusEffect } from 'expo-router';
 
 import { colors } from '../theme';
+import Header from '../components/Header';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import { getMisRutas, hoyISO } from '../services/rutasService';
@@ -51,6 +52,7 @@ export default function RutasScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Header title="Rutas" />
       <FlatList
         data={rutas}
         keyExtractor={(item) => String(item.id)}

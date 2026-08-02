@@ -20,7 +20,8 @@
         <i class="bi bi-chevron-left"></i>
       </a>
       <form method="get" action="{{ url_for('rutas.listar') }}" class="d-flex align-items-center gap-2">
-        <input type="date" name="fecha" class="form-control form-control-sm" value="{{ dia_actual.isoformat() }}" onchange="this.form.submit()">
+        <label class="small text-muted mb-0" for="filtroFechaRutas">Fecha</label>
+        <input type="date" name="fecha" id="filtroFechaRutas" class="form-control form-control-sm" value="{{ dia_actual.isoformat() }}" onchange="this.form.submit()">
       </form>
       <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('rutas.listar', fecha=dia_siguiente) }}" title="Día siguiente">
         <i class="bi bi-chevron-right"></i>
@@ -69,7 +70,21 @@
   </div>
 </div>
 
-<div class="card border-0 shadow-sm">
+<div class="d-flex justify-content-end mb-3">
+  <div class="btn-group btn-group-sm" role="group" aria-label="Vista">
+    <button type="button" class="btn btn-outline-secondary" id="btnVistaTablaRutas" onclick="cambiarVistaRutas('tabla')">
+      <i class="bi bi-table"></i> Tabla
+    </button>
+    <button type="button" class="btn btn-outline-secondary" id="btnVistaKanbanRutas" onclick="cambiarVistaRutas('kanban')">
+      <i class="bi bi-kanban"></i> Tablero
+    </button>
+    <button type="button" class="btn btn-outline-secondary" id="btnVistaTimelineRutas" onclick="cambiarVistaRutas('timeline')">
+      <i class="bi bi-clock-history"></i> Línea de tiempo
+    </button>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm" id="vistaTablaRutas">
   <div class="table-responsive">
     <table class="table table-hover mb-0 align-middle">
       <thead class="table-light">
@@ -86,6 +101,9 @@
       <tbody>
         {% for r in rutas %}
         {% set recolector = usuarios.get(r.id_usuario) %}
+        {% set total_r = r.detalles|length %}
+        {% set recolectados_r = r.detalles|selectattr('estado.estado', 'equalto', 'recolectado')|list|length %}
+        {% set progreso_pct = ((recolectados_r / total_r * 100) if total_r else 0)|round|int %}
         <tr>
           <td>{{ r.nombre }}</td>
           <td>
@@ -102,7 +120,14 @@
             –
             {% if r.hora_fin %}{{ r.hora_fin[:5] }}{% else %}—{% endif %}
           </td>
-          <td>{{ r.detalles|length }}</td>
+          <td style="min-width: 140px;">
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1 nivel-bar">
+                <div class="progress-bar {% if r.completada %}bg-success{% else %}bg-primary{% endif %}" style="width: {{ progreso_pct }}%"></div>
+              </div>
+              <span class="small fw-semibold text-nowrap">{{ recolectados_r }}/{{ total_r }}</span>
+            </div>
+          </td>
           <td>
             {% if r.completada %}
               <span class="badge bg-success">Completada</span>
@@ -125,6 +150,38 @@
   </div>
 </div>
 
+{# ===================== Vista Tablero (kanban) ===================== #}
+<div class="row g-3 d-none" id="vistaKanbanRutas">
+  {% set columnas_kanban = [('pendiente', 'Pendiente', 'text-bg-light border'), ('en_proceso', 'En proceso', 'bg-warning text-dark'), ('completada', 'Completada', 'bg-success')] %}
+  {% for clave, titulo, badge_clase in columnas_kanban %}
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">{{ titulo }}</span>
+        <span class="badge {{ badge_clase }}" id="contadorKanban{{ clave }}">0</span>
+      </div>
+      <div class="card-body d-flex flex-column gap-2" id="columnaKanban{{ clave }}" style="min-height: 120px;"></div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# ===================== Vista Línea de tiempo ===================== #}
+<div class="card border-0 shadow-sm d-none" id="vistaTimelineRutas">
+  <div class="card-body">
+    <div class="d-flex align-items-center mb-2">
+      <div style="width: 160px; flex-shrink: 0;"></div>
+      <div class="d-flex justify-content-between small text-muted flex-grow-1" id="timelineEscalaHoras"></div>
+    </div>
+    <div id="timelineFilas"></div>
+    <div id="timelineSinHorarioWrap" class="mt-4 d-none">
+      <h3 class="h6 text-muted">Sin horario capturado</h3>
+      <div id="timelineSinHorario" class="d-flex flex-column gap-2"></div>
+    </div>
+    <p class="text-muted text-center py-4 d-none" id="timelineVacio">No hay rutas para mostrar.</p>
+  </div>
+</div>
+
 {# ===================== Modal compartido: selector de contenedores ===================== #}
 <div class="modal fade" id="modalSeleccionarContenedores" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl">
@@ -136,14 +193,17 @@
       <div class="modal-body">
         <div class="row g-2 mb-3">
           <div class="col-md-6">
-            <input type="text" class="form-control" id="buscadorContenedores" placeholder="Buscar por nombre o código...">
+            <label class="form-label small mb-1" for="buscadorContenedores">Buscar</label>
+            <input type="text" class="form-control" id="buscadorContenedores" placeholder="Nombre o código...">
           </div>
           <div class="col-md-3">
+            <label class="form-label small mb-1" for="filtroZona">Zona</label>
             <select class="form-select" id="filtroZona">
               <option value="">Todas las zonas</option>
             </select>
           </div>
           <div class="col-md-3">
+            <label class="form-label small mb-1" for="filtroSector">Sector</label>
             <select class="form-select" id="filtroSector">
               <option value="">Todos los sectores</option>
             </select>
@@ -625,6 +685,7 @@ document.getElementById('modalSeleccionarContenedores').addEventListener('hidden
 // "sin contenedores" se vea consistente desde el primer render.
 document.addEventListener('DOMContentLoaded', function () {
   Object.keys(seleccionPorContexto).forEach(renderizarListaSeleccion);
+  cambiarVistaRutas('tabla');
 });
 
 // ===================== Mapa dentro de "Ver ruta" =====================
@@ -704,6 +765,172 @@ document.getElementById('modalRutaVer{{ r.id }}').addEventListener('shown.bs.mod
   renderizarMapaRuta('{{ r.id }}');
 });
 {% endfor %}
+// ===================== Vista Tabla/Tablero/Línea de tiempo =====================
+const RUTAS_VISTA_DATA = [
+  {% for r in rutas %}
+  {% set recolector_r = usuarios.get(r.id_usuario) %}
+  {% set total_r = r.detalles|length %}
+  {% set recolectados_r = r.detalles|selectattr('estado.estado', 'equalto', 'recolectado')|list|length %}
+  {
+    id: {{ r.id }},
+    nombre: {{ r.nombre|tojson }},
+    recolector: {{ (recolector_r.nombre ~ ' ' ~ recolector_r.apellido_paterno if recolector_r else 'Sin asignar')|tojson }},
+    fecha: {{ r.fecha|tojson }},
+    horaInicio: {{ (r.hora_inicio[:5] if r.hora_inicio else none)|tojson }},
+    horaFin: {{ (r.hora_fin[:5] if r.hora_fin else none)|tojson }},
+    total: {{ total_r }},
+    recolectados: {{ recolectados_r }},
+    completada: {{ 'true' if r.completada else 'false' }}
+  },
+  {% endfor %}
+];
+
+function estadoDeRuta(r) {
+  if (r.completada) return 'completada';
+  return r.recolectados > 0 ? 'en_proceso' : 'pendiente';
+}
+
+function cambiarVistaRutas(vista) {
+  const vistas = { tabla: 'vistaTablaRutas', kanban: 'vistaKanbanRutas', timeline: 'vistaTimelineRutas' };
+  const botones = { tabla: 'btnVistaTablaRutas', kanban: 'btnVistaKanbanRutas', timeline: 'btnVistaTimelineRutas' };
+
+  Object.keys(vistas).forEach(function (v) {
+    document.getElementById(vistas[v]).classList.toggle('d-none', v !== vista);
+    document.getElementById(botones[v]).classList.toggle('active', v === vista);
+  });
+
+  if (vista === 'kanban') renderizarKanbanRutas();
+  if (vista === 'timeline') renderizarTimelineRutas();
+}
+
+// ---------- Tablero (kanban), solo lectura ----------
+function renderizarKanbanRutas() {
+  const columnas = { pendiente: [], en_proceso: [], completada: [] };
+  RUTAS_VISTA_DATA.forEach(function (r) {
+    columnas[estadoDeRuta(r)].push(r);
+  });
+
+  Object.keys(columnas).forEach(function (clave) {
+    const contenedor = document.getElementById('columnaKanban' + clave);
+    const contador = document.getElementById('contadorKanban' + clave);
+    contador.textContent = columnas[clave].length;
+
+    if (columnas[clave].length === 0) {
+      contenedor.innerHTML = '<p class="text-muted small mb-0">Sin rutas aquí.</p>';
+      return;
+    }
+
+    contenedor.innerHTML = columnas[clave].map(function (r) {
+      return `
+        <div class="card border tarjeta-kanban-ruta" role="button" data-bs-toggle="modal" data-bs-target="#modalRutaVer${r.id}">
+          <div class="card-body p-2">
+            <div class="fw-semibold small">${r.nombre}</div>
+            <div class="small text-muted">${r.recolector}</div>
+            <div class="small text-muted">${r.horaInicio || '—'} – ${r.horaFin || '—'}</div>
+            <div class="small fw-semibold mt-1">${r.recolectados}/${r.total} contenedores</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  });
+}
+
+// ---------- Línea de tiempo por recolector ----------
+const TIMELINE_HORA_INICIO = 6;
+const TIMELINE_HORA_FIN = 20;
+
+function renderizarTimelineRutas() {
+  const filasWrap = document.getElementById('timelineFilas');
+  const escala = document.getElementById('timelineEscalaHoras');
+  const sinHorarioWrap = document.getElementById('timelineSinHorarioWrap');
+  const sinHorarioLista = document.getElementById('timelineSinHorario');
+  const vacio = document.getElementById('timelineVacio');
+
+  if (RUTAS_VISTA_DATA.length === 0) {
+    filasWrap.innerHTML = '';
+    escala.innerHTML = '';
+    sinHorarioWrap.classList.add('d-none');
+    vacio.classList.remove('d-none');
+    return;
+  }
+  vacio.classList.add('d-none');
+
+  // Escala de horas arriba
+  let horasHtml = '';
+  for (let h = TIMELINE_HORA_INICIO; h <= TIMELINE_HORA_FIN; h++) {
+    horasHtml += `<span>${String(h).padStart(2, '0')}:00</span>`;
+  }
+  escala.innerHTML = horasHtml;
+
+  const conHorario = RUTAS_VISTA_DATA.filter(function (r) { return r.horaInicio && r.horaFin; });
+  const sinHorario = RUTAS_VISTA_DATA.filter(function (r) { return !r.horaInicio || !r.horaFin; });
+
+  const porRecolector = {};
+  const ordenRecolectores = [];
+  conHorario.forEach(function (r) {
+    if (!porRecolector[r.recolector]) {
+      porRecolector[r.recolector] = [];
+      ordenRecolectores.push(r.recolector);
+    }
+    porRecolector[r.recolector].push(r);
+  });
+
+  const totalMinutos = (TIMELINE_HORA_FIN - TIMELINE_HORA_INICIO) * 60;
+
+  function minutosDesdeInicio(horaStr) {
+    const [h, m] = horaStr.split(':').map(Number);
+    return (h * 60 + m) - (TIMELINE_HORA_INICIO * 60);
+  }
+
+  if (ordenRecolectores.length === 0) {
+    filasWrap.innerHTML = '<p class="text-muted small mb-0">Ninguna ruta tiene horario capturado todavía.</p>';
+  } else {
+    filasWrap.innerHTML = ordenRecolectores.map(function (nombreRecolector) {
+      const bloques = porRecolector[nombreRecolector].map(function (r) {
+        let inicioMin = Math.max(0, minutosDesdeInicio(r.horaInicio));
+        let finMin = Math.min(totalMinutos, minutosDesdeInicio(r.horaFin));
+        if (finMin <= inicioMin) finMin = inicioMin + 15; // ancho mínimo visible
+        const izq = (inicioMin / totalMinutos * 100).toFixed(2);
+        const ancho = ((finMin - inicioMin) / totalMinutos * 100).toFixed(2);
+        const color = r.completada ? '#17b8a6' : '#127a6c';
+        return `
+          <div class="bloque-timeline-ruta" role="button" data-bs-toggle="modal" data-bs-target="#modalRutaVer${r.id}"
+               style="left:${izq}%; width:${ancho}%; background:${color};"
+               title="${r.nombre} (${r.horaInicio}–${r.horaFin})">
+            ${r.nombre}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="d-flex align-items-center mb-2">
+          <div class="small fw-semibold text-truncate" style="width: 160px;">${nombreRecolector}</div>
+          <div class="fila-timeline flex-grow-1">${bloques}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (sinHorario.length > 0) {
+    sinHorarioWrap.classList.remove('d-none');
+    sinHorarioLista.innerHTML = sinHorario.map(function (r) {
+      return `
+        <div class="card border" role="button" data-bs-toggle="modal" data-bs-target="#modalRutaVer${r.id}">
+          <div class="card-body p-2 d-flex justify-content-between align-items-center">
+            <div>
+              <span class="fw-semibold small">${r.nombre}</span>
+              <span class="small text-muted"> — ${r.recolector}</span>
+            </div>
+            <span class="small text-muted">${r.recolectados}/${r.total}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    sinHorarioWrap.classList.add('d-none');
+  }
+}
+
 // ===================== Mapa de rutas (usa el mismo filtro de fecha de la tabla) =====================
 // Cada ruta se distingue por un color propio (pines + línea de
 // recorrido) -- a diferencia del mapa de "Ver ruta" (una sola ruta,
@@ -720,6 +947,7 @@ const RUTAS_HOY_MAPA = [
 ];
 
 const PALETA_RUTAS_HOY = ['#127a6c', '#dfa524', '#bf4a40', '#5b6ee1', '#a34fc9', '#e0668c', '#3f9142', '#c97b2e'];
+
 
 function crearIconoPinColor(color) {
   return L.divIcon({
