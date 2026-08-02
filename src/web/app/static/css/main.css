@@ -316,6 +316,11 @@ thead.table-light th,
   position: sticky;
   top: 0;
   z-index: 1020;
+  /* Alto fijo a propósito: .page-header usa este mismo valor (56px)
+     como su "top" en móvil para pegarse justo debajo, sin encimarse.
+     Si esto queda como estimado (altura variable por contenido), ese
+     otro offset se desalinea -- fijándolo aquí, ambos SIEMPRE coinciden. */
+  min-height: 56px;
 }
 
 .sidebar-backdrop {
@@ -412,9 +417,23 @@ thead.table-light th,
   /* Rompe el padding de <main class="container-fluid py-4 px-4"> (px-4 =
      1.5rem, py-4 = 1.5rem arriba/abajo) para que el header llegue de
      verdad hasta el borde del sidebar, el borde derecho del navegador,
-     Y quede pegado arriba -- sin esto, el header quedaba tan angosto
+     y quede pegado arriba -- sin esto, el header quedaba tan angosto
      como el resto del contenido de abajo, y con un hueco encima. */
   margin: -1.5rem -1.5rem 0 -1.5rem;
+  /* Fijo al hacer scroll. top:0 funciona en escritorio (ahí .topbar
+     está oculta); en móvil .topbar SÍ existe y también es sticky en
+     top:0 -- sin el ajuste de abajo, el header quedaría encimado con
+     ella. z-index por debajo de .topbar (1020) y .sidebar (1040) para
+     no taparlas. */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+@media (max-width: 991.98px) {
+  .page-header {
+    top: 56px;
+  }
 }
 
 .page-header h1 {
