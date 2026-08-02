@@ -14,3 +14,12 @@ export async function reportarIncidencia(idContenedor, idMotivo, comentario) {
     }),
   });
 }
+
+/**
+ * Usado por la pestaña "Reportes": solo los reportes que levantó el
+ * recolector que inició sesión (GET /incidencias/me, protegido contra
+ * BOLA en el backend -- no puede ver los de nadie más).
+ */
+export async function getMisIncidencias() {
+  return apiFetch('/incidencias/me');
+}

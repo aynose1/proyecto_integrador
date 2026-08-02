@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy.orm import Session
 
@@ -31,6 +31,22 @@ class CRUDIncidencia(CRUDBase[Incidencia, IncidenciaCreate, IncidenciaUpdate]):
         query = db.query(Incidencia)
         if estado:
             query = query.join(Estado).filter(Estado.estado == estado)
+        return query.order_by(Incidencia.fecha_hora.desc()).all()
+
+    def get_multi_por_usuario(self, db: Session, id_usuario: int, fecha: date | None = None) -> list[Incidencia]:
+        """
+        Usado por la pestaña "Reportes" de la app móvil: el recolector
+        solo ve SUS propios reportes (protección BOLA -- ver el mismo
+        criterio que ya usa GET /rutas/me). fecha filtra por el día
+        exacto en que se levantó el reporte, para el filtro de fecha
+        de esa pantalla.
+        """
+        query = db.query(Incidencia).filter(Incidencia.id_usuario == id_usuario)
+        if fecha is not None:
+            query = query.filter(
+                Incidencia.fecha_hora >= datetime.combine(fecha, datetime.min.time()),
+                Incidencia.fecha_hora < datetime.combine(fecha, datetime.max.time()),
+            )
         return query.order_by(Incidencia.fecha_hora.desc()).all()
 
 

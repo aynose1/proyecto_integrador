@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app import crud
@@ -21,6 +23,20 @@ def reportar_incidencia(
     if not cont:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Contenedor no encontrado")
     return crud.incidencia.create_de_recolector(db, payload, id_usuario=current_user.id)
+
+
+@router.get("/me", response_model=list[IncidenciaRead])
+def listar_mis_incidencias(
+    fecha: date | None = Query(default=None, description="Filtra por fecha exacta (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_recolector),
+):
+    """
+    El recolector consulta únicamente los reportes que ÉL levantó
+    (pestaña "Reportes" de la app móvil) -- mismo criterio de
+    aislamiento que ya usa GET /rutas/me.
+    """
+    return crud.incidencia.get_multi_por_usuario(db, current_user.id, fecha=fecha)
 
 
 @router.get("", response_model=list[IncidenciaRead], dependencies=[Depends(require_admin)])

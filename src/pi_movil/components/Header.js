@@ -7,23 +7,14 @@ import { colors, typography } from '../theme';
 import { getPerfil, logout } from '../services/authService';
 
 /**
- * Barra superior fija de cada pestaña, igual esquema que el header
- * nuevo de la web (fondo teal-900, acento aqua): logotipo arriba a la
- * izquierda, título de la pestaña en el centro, avatar arriba a la
- * derecha que abre el menú de "Cambiar de cuenta" / "Cerrar sesión".
+ * Barra superior fija de cada pestaña: logotipo real arriba a la
+ * izquierda (assets/logo.png), título de la pestaña al centro, avatar
+ * arriba a la derecha con el menú de "Cambiar de cuenta"/"Cerrar sesión".
  *
- * LOGOTIPO: por ahora usa assets/icon.png (el placeholder teal con
- * "PI" que ya existe en el proyecto) porque es el único archivo que
- * tengo garantizado que existe -- si apunto a un archivo que no
- * existe, el build de Expo truena. Para poner el logo real: agrega tu
- * archivo (ej. assets/logo.png, fondo transparente, recomendado ~200px
- * de alto) y cambia la línea del require() más abajo.
- *
- * SafeAreaView vacío de abajo: ver la nota larga que ya se dejó en
- * versiones anteriores de este archivo -- pinta el inset superior
- * (donde vive la barra de notificaciones) del mismo teal oscuro que el
- * header, para que quede continuo en cualquier pantalla (incluida la
- * de cámara, con fondo negro).
+ * SafeAreaView vacío de abajo: pinta el inset superior (donde vive la
+ * barra de notificaciones) del mismo teal oscuro que el header, para
+ * que quede continuo en cualquier pantalla (incluida la de cámara, con
+ * fondo negro).
  *
  * NOTA sobre "Cambiar de cuenta": la app solo guarda una sesión a la
  * vez, así que hace exactamente lo mismo que "Cerrar sesión" por
@@ -61,14 +52,16 @@ export default function Header({ title }) {
     <>
       <SafeAreaView style={{ backgroundColor: colors.brandTeal900 }} />
       <View style={styles.header}>
-        {/* LOGOTIPO -- cambia este require() por tu archivo real cuando lo tengas */}
-        <Image source={require('../assets/icon.png')} style={styles.logo} resizeMode="contain" />
+        <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
 
         <Text style={styles.titulo} numberOfLines={1}>
           {title}
         </Text>
 
-        <Pressable style={styles.avatarButton} onPress={() => setMenuVisible(true)}>
+        <Pressable
+          style={({ pressed }) => [styles.avatarButton, pressed && styles.avatarButtonPressed]}
+          onPress={() => setMenuVisible(true)}
+        >
           <Text style={styles.avatarTexto}>{iniciales}</Text>
         </Pressable>
 
@@ -101,46 +94,57 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
     gap: 12,
     backgroundColor: colors.brandTeal900,
+    // Sombra suave hacia el contenido de abajo, para que el header se
+    // sienta como una capa propia y no un bloque plano pegado al resto.
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+    zIndex: 10,
   },
   logo: {
-    width: 32,
-    height: 32,
+    width: 46,
+    height: 46,
   },
   titulo: {
     flex: 1,
     fontFamily: typography.bold,
-    fontSize: 17,
+    fontSize: 18,
     color: '#ffffff',
     letterSpacing: 0.2,
   },
   avatarButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.brandAqua500,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
-  avatarTexto: { fontFamily: typography.bold, color: colors.brandTeal900, fontSize: 13 },
+  avatarButtonPressed: { opacity: 0.85 },
+  avatarTexto: { fontFamily: typography.bold, color: colors.brandTeal900, fontSize: 14 },
   backdrop: { flex: 1, backgroundColor: 'rgba(7, 33, 30, 0.4)' },
   menu: {
     position: 'absolute',
-    top: 60,
+    top: 66,
     right: 16,
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 8,
-    minWidth: 220,
+    minWidth: 224,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
   menuNombre: { fontFamily: typography.bold, fontSize: 15, color: colors.ink900, paddingHorizontal: 16, paddingTop: 8 },
   menuCodigo: { fontFamily: typography.regular, fontSize: 12, color: colors.ink600, paddingHorizontal: 16, paddingBottom: 8 },

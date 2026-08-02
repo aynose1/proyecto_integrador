@@ -28,10 +28,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="reportar"
+        name="reportes"
         options={{
-          title: 'Reportar',
-          tabBarIcon: ({ color, size }) => <Ionicons name="flag-outline" size={size} color={color} />,
+          title: 'Reportes',
+          tabBarIcon: ({ color, size }) => <Ionicons name="document-text-outline" size={size} color={color} />,
         }}
       />
     </Tabs>

@@ -23,8 +23,16 @@ scrape_configs:
       - targets:
           - mysql_exporter:9104
 
+  # OJO: este archivo NO se sustituye con envsubst como haproxy.cfg.template
+  # (Prometheus no trae esa herramienta en su imagen oficial) -- es un
+  # valor fijo, hay que editarlo a mano según el entorno:
+  #   - Pruebas locales (Docker Desktop, ambos compose en la misma
+  #     máquina): host.docker.internal, como está ahorita.
+  #   - Producción (2 VMs reales, compose.public.yaml en una VM aparte):
+  #     cambia esto a la IP privada real de esa VM pública
+  #     (la misma que pones en PUBLIC_HOST_IP en tu .env).
   - job_name: haproxy-edge
     metrics_path: /metrics
     static_configs:
       - targets:
-          - 192.168.10.102:8405
+          - host.docker.internal:8405
