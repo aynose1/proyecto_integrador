@@ -3,6 +3,7 @@ services:
     image: mysql:latest
     restart: unless-stopped
     environment:
+      TZ: America/Mexico_City
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       # IMPORTANTE: debe coincidir con DB_NAME en src/backend/.env
       MYSQL_DATABASE: ${MYSQL_DATABASE:-gestion_residuos}
