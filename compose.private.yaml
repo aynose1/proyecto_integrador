@@ -128,6 +128,9 @@ services:
       REACT_NATIVE_PACKAGER_HOSTNAME: 192.168.100.98
     ports:
       - "8081:8081"
+    volumes:
+      - ./src/pi_movil:/app
+      - /app/node_modules
     networks:
       - app_network
     stdin_open: true

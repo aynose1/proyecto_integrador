@@ -12,6 +12,14 @@ export const colors = {
   brandAqua300: '#74e0d1',
   brandAqua100: '#e3f8f5', // fondos suaves, tarjetas de header
 
+  // Acento "literal del sector": el verde real del símbolo universal de
+  // reciclaje (no el teal/aqua de marca, que es más genérico-tech).
+  // Uso deliberadamente restringido a estados de "ya se resolvió" --
+  // ruta completada, reporte atendido -- para que funcione como un
+  // acento con significado, no como un color más de fondo.
+  recycleGreen: '#2e7d32',
+  recycleGreenSoft: '#e6f2e6',
+
   ink900: '#13221f', // texto principal
   ink600: '#4c6360',
   ink400: '#7d928e', // texto muted / iconos inactivos

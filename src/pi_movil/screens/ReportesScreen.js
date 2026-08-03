@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   itemComentario: { fontFamily: typography.regular, fontSize: 12, color: colors.ink600, marginTop: 3 },
   estadoBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, marginTop: 6 },
   estadoBadgePendiente: { backgroundColor: '#fbeee0' },
-  estadoBadgeAtendido: { backgroundColor: colors.pageBg },
+  estadoBadgeAtendido: { backgroundColor: colors.recycleGreenSoft },
   estadoBadgeTexto: { fontFamily: typography.semibold, fontSize: 10, color: colors.warning },
-  estadoBadgeTextoAtendido: { color: colors.ink600 },
+  estadoBadgeTextoAtendido: { color: colors.recycleGreen },
 });
