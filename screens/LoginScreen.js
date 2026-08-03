@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 
 import { colors, typography } from '../theme';
 import { login } from '../services/authService';
@@ -23,6 +24,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const [codigoUsuario, setCodigoUsuario] = useState('');
   const [contrasena, setContrasena] = useState('');
+  const [verContrasena, setVerContrasena] = useState(false);
   const [cargando, setCargando] = useState(false);
 
   const puedeEnviar = codigoUsuario.trim().length > 0 && contrasena.length > 0 && !cargando;
@@ -74,17 +76,22 @@ export default function LoginScreen() {
             />
 
             <Text style={styles.label}>Contraseña</Text>
-            <TextInput
-              style={styles.input}
-              value={contrasena}
-              onChangeText={setContrasena}
-              secureTextEntry
-              autoCapitalize="none"
-              placeholder="••••••••"
-              placeholderTextColor={colors.ink400}
-              editable={!cargando}
-              onSubmitEditing={handleLogin}
-            />
+            <View style={styles.inputConIcono}>
+              <TextInput
+                style={styles.inputInterno}
+                value={contrasena}
+                onChangeText={setContrasena}
+                secureTextEntry={!verContrasena}
+                autoCapitalize="none"
+                placeholder="••••••••"
+                placeholderTextColor={colors.ink400}
+                editable={!cargando}
+                onSubmitEditing={handleLogin}
+              />
+              <Pressable onPress={() => setVerContrasena((v) => !v)} style={styles.iconoOjo} hitSlop={10}>
+                <Ionicons name={verContrasena ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.ink600} />
+              </Pressable>
+            </View>
 
             <Pressable
               style={({ pressed }) => [
@@ -139,6 +146,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.ink900,
   },
+  inputConIcono: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+  },
+  inputInterno: {
+    flex: 1,
+    paddingVertical: 12,
+    fontFamily: typography.regular,
+    fontSize: 15,
+    color: colors.ink900,
+  },
+  iconoOjo: { paddingLeft: 10, paddingVertical: 4 },
   button: {
     marginTop: 28,
     backgroundColor: colors.brandTeal700,

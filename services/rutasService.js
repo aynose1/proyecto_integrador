@@ -18,11 +18,17 @@ export async function getRutaDetalle(rutaId) {
 }
 
 /**
- * Solo los contenedores pendientes de recolectar dentro de una ruta —
- * los ya recolectados no deben aparecer en la lista que ve el recolector.
+ * Contenedores pendientes de recolectar dentro de una ruta -- los ya
+ * recolectados no aparecen (ver estado del DETALLE), y TAMPOCO los que
+ * ya fueron reportados (ver estado del CONTENEDOR mismo, que pasa a
+ * "inactivo" automáticamente al reportar una incidencia -- ver backend
+ * crud/incidencia.py). No tiene caso pedirle al recolector que
+ * recolecte algo que ya se marcó fuera de servicio.
  */
 export function contenedoresPendientes(ruta) {
-  return (ruta?.detalles || []).filter((d) => d.estado?.estado === ESTADO_PENDIENTE);
+  return (ruta?.detalles || []).filter(
+    (d) => d.estado?.estado === ESTADO_PENDIENTE && d.contenedor?.estado?.estado !== 'inactivo'
+  );
 }
 
 export async function marcarRecolectado(rutaId, codigoContenedor) {
