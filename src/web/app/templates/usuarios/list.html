@@ -109,7 +109,7 @@
                 <i class="bi bi-eye"></i>
               </button>
             </div>
-            <div class="form-text">Mínimo 8 caracteres.</div>
+            <div class="password-requisitos small" id="requisitos_u_contrasena"></div>
           </div>
           <div class="col-md-6">
             <label class="form-label" for="u_contrasena_confirm">Confirmar contraseña</label>
@@ -173,6 +173,7 @@
                 <i class="bi bi-eye"></i>
               </button>
             </div>
+            <div class="password-requisitos small" id="requisitos_ue_contrasena_{{ u.id }}"></div>
           </div>
           <div class="col-md-6">
             <label class="form-label" for="ue_contrasena_confirm_{{ u.id }}">Confirmar contraseña</label>
@@ -194,6 +195,7 @@
 </div>
 {% endfor %}
 
+<script src="{{ url_for('static', filename='js/password-policy.js') }}"></script>
 <script>
   function aplicarFiltrosUsuarios() {
     const texto = (document.getElementById('buscadorUsuarios').value || '').toLowerCase().trim();
@@ -246,8 +248,10 @@
   }
 
   configurarValidacionContrasenas('u_contrasena', 'u_contrasena_confirm', false);
+  montarChecklistPassword('u_contrasena', 'requisitos_u_contrasena', false);
   {% for u in usuarios %}
   configurarValidacionContrasenas('ue_contrasena_{{ u.id }}', 'ue_contrasena_confirm_{{ u.id }}', true);
+  montarChecklistPassword('ue_contrasena_{{ u.id }}', 'requisitos_ue_contrasena_{{ u.id }}', true);
   {% endfor %}
 </script>
 {% endblock %}

@@ -611,6 +611,29 @@ thead.table-light th,
   line-height: 1.4;
 }
 
+/* ---------- Lista de requisitos de contraseña (en vivo) ---------- */
+.password-requisitos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.password-requisito {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-400);
+}
+
+.password-requisito i {
+  font-size: 0.85rem;
+}
+
+.password-requisito--ok {
+  color: var(--brand-teal-700);
+}
+
 /* ---------- Tablero (kanban) de Rutas ---------- */
 .tarjeta-kanban-ruta {
   cursor: pointer;

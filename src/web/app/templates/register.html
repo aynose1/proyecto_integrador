@@ -32,12 +32,22 @@
       </div>
       <div class="mb-3">
         <label class="form-label" for="contrasena">Contraseña</label>
-        <input type="password" class="form-control" id="contrasena" name="contrasena" required minlength="8">
-        <div class="form-text">Mínimo 8 caracteres.</div>
+        <div class="input-group">
+          <input type="password" class="form-control" id="contrasena" name="contrasena" required minlength="8">
+          <button type="button" class="btn btn-outline-secondary" onclick="toggleVerContrasena('contrasena', this)" tabindex="-1">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+        <div class="password-requisitos small" id="requisitos_contrasena"></div>
       </div>
       <div class="mb-4">
         <label class="form-label" for="contrasena_confirm">Confirmar contraseña</label>
-        <input type="password" class="form-control" id="contrasena_confirm" name="contrasena_confirm" required minlength="8">
+        <div class="input-group">
+          <input type="password" class="form-control" id="contrasena_confirm" name="contrasena_confirm" required minlength="8">
+          <button type="button" class="btn btn-outline-secondary" onclick="toggleVerContrasena('contrasena_confirm', this)" tabindex="-1">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
       </div>
       <button type="submit" class="btn btn-primary w-100">Crear cuenta</button>
     </form>
@@ -48,4 +58,26 @@
     </p>
   </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/password-policy.js') }}"></script>
+<script>
+  function toggleVerContrasena(inputId, boton) {
+    const input = document.getElementById(inputId);
+    const icono = boton.querySelector('i');
+    const verAhora = input.type === 'password';
+    input.type = verAhora ? 'text' : 'password';
+    icono.classList.toggle('bi-eye', !verAhora);
+    icono.classList.toggle('bi-eye-slash', verAhora);
+  }
+
+  montarChecklistPassword('contrasena', 'requisitos_contrasena', false);
+
+  const passInput = document.getElementById('contrasena');
+  const confirmInput = document.getElementById('contrasena_confirm');
+  function validarCoincidenciaRegistro() {
+    confirmInput.setCustomValidity(passInput.value !== confirmInput.value ? 'Las contraseñas no coinciden.' : '');
+  }
+  passInput.addEventListener('input', validarCoincidenciaRegistro);
+  confirmInput.addEventListener('input', validarCoincidenciaRegistro);
+</script>
 {% endblock %}

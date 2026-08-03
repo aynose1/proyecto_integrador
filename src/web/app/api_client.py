@@ -17,7 +17,14 @@ class APIClient:
         self.token = token
 
     def _headers(self) -> dict[str, str]:
-        headers = {"Content-Type": "application/json"}
+        headers = {
+            "Content-Type": "application/json",
+            # Capa extra junto al JWT (defensa en profundidad) -- ver
+            # api/deps.py::verify_platform_api_key en el backend. Debe
+            # mandarse en TODAS las peticiones, incluido login (por eso
+            # vive aquí en _headers, no condicionado a self.token).
+            "X-Platform-Key": current_app.config["PLATFORM_API_KEY"],
+        }
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
         return headers

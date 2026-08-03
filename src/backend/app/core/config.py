@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     # --- API Key para el sistema embebido (sensores) ---
     DEVICE_API_KEY: str
 
+    # --- API Key de plataforma: capa EXTRA junto al JWT (defensa en
+    # profundidad), obligatoria en TODOS los endpoints salvo los de
+    # sensores (esos ya tienen su propia llave, DEVICE_API_KEY, para un
+    # actor distinto). La misma llave la comparten la web y la app
+    # móvil -- ver web/app/config.py y pi_movil/config/api.js.
+    PLATFORM_API_KEY: str
+
     # --- Rate limiting ---
     RATE_LIMIT_LOGIN: str = "5/minute"
     RATE_LIMIT_DEFAULT: str = "100/minute"
