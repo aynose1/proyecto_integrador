@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL, PLATFORM_API_KEY } from '../config/api';
 import { apiFetch, saveTokens, clearTokens, getAccessToken, ApiError } from './apiClient';
 
 /**
@@ -9,7 +9,10 @@ import { apiFetch, saveTokens, clearTokens, getAccessToken, ApiError } from './a
 export async function login(codigoUsuario, contrasena) {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Platform-Key': PLATFORM_API_KEY,
+    },
     body: JSON.stringify({ codigo_usuario: codigoUsuario, contrasena }),
   });
 

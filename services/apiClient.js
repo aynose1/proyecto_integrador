@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL, PLATFORM_API_KEY } from '../config/api';
 
 const ACCESS_TOKEN_KEY = 'pi_access_token';
 const REFRESH_TOKEN_KEY = 'pi_refresh_token';
@@ -45,7 +45,10 @@ async function refreshAccessToken() {
 
   const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Platform-Key': PLATFORM_API_KEY,
+    },
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
 
@@ -60,10 +63,12 @@ async function refreshAccessToken() {
 }
 
 /**
- * Fetch autenticado hacia la API: agrega el header Authorization,
- * intenta refrescar el token UNA vez si la respuesta es 401 (por si
- * expiró), y lanza ApiError con el mensaje que manda el backend si algo
- * falla, para que las pantallas solo tengan que mostrar error.message.
+ * Fetch autenticado hacia la API: agrega el header Authorization (JWT)
+ * Y X-Platform-Key (capa extra, ver web/app/api_client.py del lado
+ * web para el mismo patrón), intenta refrescar el token UNA vez si la
+ * respuesta es 401 (por si expiró), y lanza ApiError con el mensaje que
+ * manda el backend si algo falla, para que las pantallas solo tengan
+ * que mostrar error.message.
  */
 export async function apiFetch(path, options = {}) {
   const token = await getAccessToken();
@@ -73,6 +78,7 @@ export async function apiFetch(path, options = {}) {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        'X-Platform-Key': PLATFORM_API_KEY,
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...options.headers,
       },

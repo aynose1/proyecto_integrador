@@ -16,3 +16,23 @@ if (!API_BASE_URL) {
       'en la raíz del proyecto (puedes copiar ".env.example") y reinicia "npx expo start".'
   );
 }
+
+/**
+ * API Key de plataforma -- capa extra junto al JWT (defensa en
+ * profundidad), la misma llave compartida que usa la web (ver
+ * web/app/config.py::PLATFORM_API_KEY). Debe coincidir EXACTO con
+ * PLATFORM_API_KEY en el .env del backend.
+ *
+ * AVISO: esta llave viaja embebida en el bundle de la app compilada --
+ * cualquiera que descompile el .apk podría extraerla. Es una capa de
+ * "defensa en profundidad" (una más, no la única), no un secreto
+ * verdaderamente inviolable.
+ */
+export const PLATFORM_API_KEY = process.env.EXPO_PUBLIC_PLATFORM_API_KEY;
+
+if (!PLATFORM_API_KEY) {
+  console.warn(
+    '[config/api.js] Falta EXPO_PUBLIC_PLATFORM_API_KEY en tu ".env". ' +
+      'Sin ella, TODAS las peticiones a la API van a fallar (401).'
+  );
+}
