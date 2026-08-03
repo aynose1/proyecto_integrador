@@ -18,11 +18,15 @@ def reportar_incidencia(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_recolector),
 ):
-    """El recolector reporta desde la vista de escaneo QR (ej. lectura errónea del sensor)."""
+    """
+    El recolector reporta desde la vista de escaneo QR (ej. lectura
+    errónea del sensor). El contenedor pasa a Inactivo automáticamente
+    -- ver crud.incidencia.create_de_recolector.
+    """
     cont = crud.contenedor.get(db, payload.id_contenedor)
     if not cont:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Contenedor no encontrado")
-    return crud.incidencia.create_de_recolector(db, payload, id_usuario=current_user.id)
+    return crud.incidencia.create_de_recolector(db, payload, id_usuario=current_user.id, contenedor=cont)
 
 
 @router.get("/me", response_model=list[IncidenciaRead])

@@ -101,10 +101,24 @@
               {% endfor %}
             </select>
           </div>
-          <div class="col-12">
+          <div class="col-md-6">
             <label class="form-label" for="u_contrasena">Contraseña</label>
-            <input type="password" class="form-control" id="u_contrasena" name="contrasena" required minlength="8">
+            <div class="input-group">
+              <input type="password" class="form-control" id="u_contrasena" name="contrasena" required minlength="8">
+              <button type="button" class="btn btn-outline-secondary" onclick="toggleVerContrasena('u_contrasena', this)" tabindex="-1">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
             <div class="form-text">Mínimo 8 caracteres.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="u_contrasena_confirm">Confirmar contraseña</label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="u_contrasena_confirm" required minlength="8">
+              <button type="button" class="btn btn-outline-secondary" onclick="toggleVerContrasena('u_contrasena_confirm', this)" tabindex="-1">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -143,7 +157,7 @@
             <label class="form-label" for="ue_apellido_materno_{{ u.id }}">Apellido materno</label>
             <input type="text" class="form-control" id="ue_apellido_materno_{{ u.id }}" name="apellido_materno" maxlength="100" value="{{ u.apellido_materno or '' }}">
           </div>
-          <div class="col-md-6">
+          <div class="col-12">
             <label class="form-label" for="ue_tipo_{{ u.id }}">Tipo de usuario</label>
             <select class="form-select" id="ue_tipo_{{ u.id }}" name="id_tipo_usuario" required>
               {% for t in tipos_usuario %}
@@ -153,7 +167,21 @@
           </div>
           <div class="col-md-6">
             <label class="form-label" for="ue_contrasena_{{ u.id }}">Nueva contraseña</label>
-            <input type="password" class="form-control" id="ue_contrasena_{{ u.id }}" name="contrasena" minlength="8" placeholder="Dejar en blanco para no cambiarla">
+            <div class="input-group">
+              <input type="password" class="form-control" id="ue_contrasena_{{ u.id }}" name="contrasena" minlength="8" placeholder="Dejar en blanco para no cambiarla">
+              <button type="button" class="btn btn-outline-secondary" onclick="toggleVerContrasena('ue_contrasena_{{ u.id }}', this)" tabindex="-1">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="ue_contrasena_confirm_{{ u.id }}">Confirmar contraseña</label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="ue_contrasena_confirm_{{ u.id }}" placeholder="Dejar en blanco para no cambiarla">
+              <button type="button" class="btn btn-outline-secondary" onclick="toggleVerContrasena('ue_contrasena_confirm_{{ u.id }}', this)" tabindex="-1">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -186,5 +214,40 @@
 
   document.getElementById('buscadorUsuarios').addEventListener('input', aplicarFiltrosUsuarios);
   document.getElementById('filtroTipoUsuario').addEventListener('change', aplicarFiltrosUsuarios);
+
+  // ===================== Mostrar/ocultar contraseña ("el ojo") =====================
+  function toggleVerContrasena(inputId, boton) {
+    const input = document.getElementById(inputId);
+    const icono = boton.querySelector('i');
+    const verAhora = input.type === 'password';
+    input.type = verAhora ? 'text' : 'password';
+    icono.classList.toggle('bi-eye', !verAhora);
+    icono.classList.toggle('bi-eye-slash', verAhora);
+  }
+
+  // ===================== Confirmar que ambas contraseñas coincidan =====================
+  // opcional=true (Editar): si el campo de contraseña se deja vacío, no
+  // se está cambiando -- no hay nada que validar. opcional=false (Nuevo):
+  // ambos campos son obligatorios y siempre deben coincidir.
+  function configurarValidacionContrasenas(passId, confirmId, opcional) {
+    const passInput = document.getElementById(passId);
+    const confirmInput = document.getElementById(confirmId);
+
+    function validar() {
+      if (opcional && !passInput.value && !confirmInput.value) {
+        confirmInput.setCustomValidity('');
+        return;
+      }
+      confirmInput.setCustomValidity(passInput.value !== confirmInput.value ? 'Las contraseñas no coinciden.' : '');
+    }
+
+    passInput.addEventListener('input', validar);
+    confirmInput.addEventListener('input', validar);
+  }
+
+  configurarValidacionContrasenas('u_contrasena', 'u_contrasena_confirm', false);
+  {% for u in usuarios %}
+  configurarValidacionContrasenas('ue_contrasena_{{ u.id }}', 'ue_contrasena_confirm_{{ u.id }}', true);
+  {% endfor %}
 </script>
 {% endblock %}

@@ -120,7 +120,10 @@ export default function EscaneoRapidoScreen() {
     setEnviando(true);
     try {
       await reportarIncidencia(contenedorInfo.id, motivoId, comentario.trim());
-      Alert.alert('Listo', 'Se reportó la incidencia. Un administrador la va a revisar.');
+      Alert.alert(
+        'Listo',
+        'Se reportó la incidencia y el contenedor quedó marcado como inactivo hasta que un administrador lo revise.'
+      );
       resetTodo();
     } catch (error) {
       Alert.alert('Error', error.message || 'No se pudo enviar el reporte.');

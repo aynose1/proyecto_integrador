@@ -4,15 +4,22 @@ from sqlalchemy.orm import Session
 
 from app.crud.base import CRUDBase
 from app.models.catalogos import Estado
+from app.models.contenedor import Contenedor
 from app.models.incidencia import Incidencia
 from app.schemas.incidencia import IncidenciaCreate, IncidenciaUpdate
 
 
 class CRUDIncidencia(CRUDBase[Incidencia, IncidenciaCreate, IncidenciaUpdate]):
-    def create_de_recolector(self, db: Session, obj_in: IncidenciaCreate, id_usuario: int) -> Incidencia:
+    def create_de_recolector(
+        self, db: Session, obj_in: IncidenciaCreate, id_usuario: int, contenedor: Contenedor
+    ) -> Incidencia:
         estado_pendiente = db.query(Estado).filter(Estado.estado == "pendiente").first()
         if not estado_pendiente:
             raise ValueError("El catálogo 'estados' no tiene un registro 'pendiente'. Revisa el seeder.")
+
+        estado_inactivo = db.query(Estado).filter(Estado.estado == "inactivo").first()
+        if not estado_inactivo:
+            raise ValueError("El catálogo 'estados' no tiene un registro 'inactivo'. Revisa el seeder.")
 
         incidencia = Incidencia(
             id_contenedor=obj_in.id_contenedor,
@@ -23,6 +30,16 @@ class CRUDIncidencia(CRUDBase[Incidencia, IncidenciaCreate, IncidenciaUpdate]):
             id_estado=estado_pendiente.id,
         )
         db.add(incidencia)
+
+        # A petición explícita: en cuanto se reporta un problema, el
+        # contenedor pasa a Inactivo -- así deja de asignarse a rutas
+        # nuevas hasta que un administrador lo revise y lo reactive
+        # manualmente (no hay reactivación automática a propósito: un
+        # admin tiene que confirmar que el problema ya se resolvió).
+        # Idempotente si ya estaba inactivo (ej. dos reportes seguidos).
+        contenedor.id_estado = estado_inactivo.id
+        db.add(contenedor)
+
         db.commit()
         db.refresh(incidencia)
         return incidencia

@@ -51,3 +51,8 @@ class ContenedorSummary(BaseModel):
     nivel_actual: Decimal
     peso_actual: Decimal
     capacidad_max: Decimal
+    # Agregado a propósito: la app móvil necesita saber si el contenedor
+    # quedó Inactivo (ej. por un reporte de incidencia) para poder
+    # ocultarlo de la lista de pendientes de una ruta -- antes este
+    # campo no viajaba aquí, solo en ContenedorRead (la vista completa).
+    estado: EstadoRead
